@@ -1,0 +1,56 @@
+\section{Theoretical background}
+
+A container is an isolated process that uses a shared kernel \cite{1}. From the user's point of view, a container may appear similarly to a virtual machine, especially when the process inside the container is a shell. However, containers and virtual machines represent the opposite approaches to virtualization. While a virtual machine typically runs a guest kernel that is separate from the host kernel and resides on top of it, containerized applications usually share the host kernel with the host operating system, host processes and other containers. Nevertheless, containerized applications provide a several layers of isolation, including their own network stack, separate root directory and limited access to host resources. This isolation relies on several Linux kernel features including Linux namespaces, \texttt{chroot}, cgroups and capabilities \cite{b:rice}.
+
+\subsection{Isolation features}
+
+\subsubsection{chroot}
+
+The first attempts to create an environment similar to modern containers occured when \texttt{chroot} system call was invented. This technology provides root directory isolation, as the process is unable to see or access files outside of the assigned part of file system.
+
+More secure version of the same idea was implemented as \texttt{pivot\_root} system call and it is primarily used by container runtimes instead of chroot \cite{b:rice}.
+
+\subsubsection{Cgroups}
+
+Cgroups was the next feature added to the Linux kernel to achieve container isolation. Designed by Google in 2006, cgroups provide the segregation of computing resources. By assigning a control group to the process developers may limit available memory, CPU, disk and network bandwith. Essentially, restricting a process inside certain limits prevents it from exhausting all available resources, which may lead to the denial of service attack.
+
+Cgroups are organised in a hierarchy of controllers and could be intracted with by pseudo file system usually present at \texttt{/sys/fs/cgroup}. Files and subdirectories inside could be used to adjust limits, and writing process ID to cgroup.procs assigns the process to the group \cite{b:rice}.
+
+In 2006, version 2 of cgroups was merged to the kernel to address the inconsistency between various controllers. In version 2, process may no longer be assigned different cgroups for different types of resources (controllers), and all threads are grouped together \cite{m:cgroups}.
+
+\subsubsection{Namespaces}
+
+Linux namespaces were added to the Linux kernel in 2002 in order to virtualize parts of the system as they appear to the groups of processes \cite{m:namespaces}. Parts of kernel resources can be abstracted by the namespace, and the processes within the namespace interact with their own isolated copy of the global resource. Current versions of the Linux kernel provide namespace isolation for eight types of resources, as described in Table \ref{tab:namespaces} \cite{s:namespaces}.
+
+
+\begin{table}[H]
+  \caption{Linux namespaces}
+  \centering
+  \begin{tabular}{| p{0.2\linewidth} | p{0.6\linewidth} | p{0.1\linewidth} |}
+      \hline
+      \centering \textbf{Namespace}     & \centering \textbf{Purpose}                                                                          & \centering\arraybackslash \textbf{Version} \\ \hline
+      Mount                             & Isolates filesystem mount points                                                                     & \centering\arraybackslash 2.4.19 (2002) \\ \hline
+      UTS (Unix Timesharing System)     & Isolates hostname and domain names independently of the hostname of the machine                      & \centering\arraybackslash 2.6.19 (2006) \\ \hline
+      IPC (Inter-process Communication) & Isolate shared memory regions, message queues visible to processes                                   & \centering\arraybackslash 2.6.19 (2006) \\ \hline
+      PID (Process ID)                  & Isolate visible processes, allows PIDs duplication in separate namespaces (including PID 1)          & \centering\arraybackslash 2.6.24 (2008) \\ \hline
+      Network                           & Isolate network devices, addresses and routing tables                                                & \centering\arraybackslash 2.6.29 (2009) \\ \hline
+      User                              & Isolate User and Group IDs so that ID presented to process can be mapped to different ID on the host & \centering\arraybackslash 3.8 (2013)    \\ \hline
+      Cgroup                            & Isolate the subtree of cgroup hierarchy visible to the process                                       & \centering\arraybackslash 4.6 (2016)    \\ \hline
+      Time                              & Isolate system time                                                                                  & \centering\arraybackslash 5.6 (2020)    \\ \hline
+  \end{tabular}
+  \label{tab:namespaces}
+\end{table}
+
+Each kind of namespaces may be used separately or in combination with others to provide necessary degree of isolation. 
+
+By using namespaces, developers can create environments that are isolated from the host and other processes, as the process cannot modify kernel resources and affect the processes outside the assigned namespace \cite{d:dockersecurity}. Furthermore, namespaces add very little overhead and use system resouces more efficiently compared to virtual machines. For that reason namespaces are particularly useful for containerization \cite{c:1}.
+
+\subsubsection{Capabilities}
+
+Finally, 
+
+
+
+\subsection{Runtimes}
+
+

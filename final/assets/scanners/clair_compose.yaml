@@ -1,0 +1,27 @@
+services:
+  postgres:
+    image: docker.io/library/postgres:12
+    networks:
+      - clair-local
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: clair
+      POSTGRES_USER: clair
+      POSTGRES_DB: clair
+    restart: unless-stopped
+  clair:
+    image: clair-local:latest
+    networks:
+      - clair-local
+    ports:
+      - 6060:6060
+    restart: unless-stopped
+    volumes:
+      - ./local-dev/clair/:/config
+    environment:
+      CLAIR_MODE: combo
+      CLAIR_CONF: /config/config.yaml
+networks:
+  clair-local:
+    driver: bridge

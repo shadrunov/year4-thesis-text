@@ -1,0 +1,137 @@
+\section{Vulnerability detection}
+
+\subsection{Previous studies}
+
+The researches upon the quality and effectiveness of vulnerabilities detection tools have already been attempted. One of the most compregensive works was published by Omar Javed and Salman Toor in 2021 \cite{arxiv:1}. The approach described in the paper was based on several open source scanners (namely, Clair, Anchore, and Microscanner). After inspecting 59 Docker images for Java-based applications, the authors calculate detection coverage and detection hit ratio metrics and conclude that the most accurate tool (Anchore) was omitting around 34\% of vulnerabilities. A major limitation of their work is a relatively small number of images used to evaluate the performance of scanning tools as well as the range of scanners examined.
+
+Another paper by K. Brady et al. described the CI/CD pipeline which combined static and dynamic analysers \cite{c:2}. A set of 7 images was submitted to Clair and Anchore scanners and original dynamic scanner based on Docker-in-Docker approach. The results clearly show the importance of dynamic detection method, however, no direct comparison of Clair and Anchore was conducted.
+
+\subsection{Methodology}
+The process of data acquisition and the following analysis for this part of research could be divided into several stages Firstly, a set of container images and tags for scanning was composed. For this purpose Docker Hub API were employed. Then, each image was submitted to each scanning tool and vulnerability report was stored on disk in JSON format. After scanning, reports were combined and number of vulnerabilities for each image was calculated. Based on this calculations the metrics of detection quality were aggregated for each scanning tool.
+
+\subsubsection{Images selection}
+
+To select the most popular (according to the number of pulls) images from Docker Hub, the following algorithm was developed.
+
+At first, we composed a list of search queries. The list consists of combinations of two latin letters starting from \texttt{aa} and finishing with \texttt{zz}. Each of $26 \cdot 26 = 676$ combinations was then used to query the list of corresponding images from Docker Hub, as shown in Listing \ref{lst:images}. The result was then saved to the JSON file.
+\begin{listing}[htp]
+    \centering
+    \begin{minipage}{0.8\linewidth}
+        \begin{minted}[linenos=true, tabsize=4]{python}
+def get_page(page, query):
+url = "https://hub.docker.com/api/content/v1/products/search"
+params = {
+    "page_size": 100,
+    "q": query,
+    "source": "community",
+    "type": "image",
+    "page": page
+}
+response = requests.get(url, params=params)
+response.raise_for_status()
+data = response.json()
+return data["summaries"]
+        \end{minted}
+    \end{minipage}
+    \caption{Query images}
+    \label{lst:images}
+\end{listing}
+
+The next step is to combine search results from each query and sample a reasonably sized subset of the most popular images. We parse each JSON file and drop duplicating images. After all, the set of 3694651 images is sorted by \texttt{popularity} parameter and 0.999 percentile is selected. The resulting 3695 images are saved for further processing.
+
+\subsubsection{Tags selection}
+
+Each image exists in multiple versions which are referred to as image tags. We have to select a number of tags for each image to scan. Tags could also be built for a specific architecture and OS platform. We are primarily interested in \texttt{amd64} and \texttt{Linux} tags. 
+
+The request used for generating the list of tags for each image is demonstrated in Listing \ref{lst:tags}. We randomly select 10 tags for each image that satisfy mentioned requirements. As the result, the set of approximately 30000 tags is composed and stored in file.
+
+\begin{listing}[htp]
+    \centering
+    \begin{minipage}{1\linewidth}
+        \begin{minted}[linenos=true, tabsize=4]{python}
+pref, suf = image.split("/")
+link = f"https://hub.docker.com/v2/namespaces/{pref}/repositories/{suf}/tags"
+res = requests.get(link)
+res = res.json()
+up = res["count"]
+iteration = 0
+total = 0
+while total < 10 and iteration < 100:
+    page_num = random.randint(1, up)
+    response = requests.get(link, params={"page": page_num, "page_size": 1})
+    tag = response.json()["results"][0]
+    if "amd64" in [i["architecture"] for i in tag["images"]]:
+        tags.append(tag)
+        total += 1
+    iteration += 1
+        \end{minted}
+    \end{minipage}
+    \caption{Query tags}
+    \label{lst:tags}
+\end{listing}
+
+\subsubsection{Scan images}
+
+Next steps were performed on a virtual machine with 16 vCPU and 32 Gb RAM. As a rule, each scanning tool must be installed on the machine, and then each image tag is passed to the tool with command line client.
+
+\subsubsection*{Clair}
+
+To run Clair scanner locally, its Docker images were used from official repository (\url{https://github.com/quay/clair}). A special docker-compose file listed in Appendix \ref{appendix:clair-compose} helps to run database and scanner containers, and \texttt{clairctl} command line tool actually pulls the image from Docker Hub and passes it to the scanner. The deployment process is described in the manual (\url{https://quay.github.io/clair/howto/getting_started.html}). An example of command which must be executed is listed below. 
+
+\begin{listing}[htp]
+    \centering
+    \begin{minipage}{0.9\linewidth}
+        \begin{minted}[linenos=false, tabsize=4]{bash}
+clairctl report --out json fluent/fluent-bit:2.0.8-debug > report.json
+        \end{minted}
+    \end{minipage}
+    \caption{Run Clair scanner}
+    \label{lst:clair}
+\end{listing}
+
+
+\subsubsection*{Scout}
+
+Scout scanner is developed by Docker and shipped as a plugin for the docker CLI tool. Installation process is described in the manual (\url{https://docs.docker.com/scout/install/}).
+
+To scan image with docker scout, the following command must be issued.
+
+\begin{listing}[htp]
+    \centering
+    \begin{minipage}{0.8\linewidth}
+        \begin{minted}[linenos=false, tabsize=4]{bash}
+docker scout cves --format sarif \ 
+        --output report.json \
+        stakater/reloader:SNAPSHOT-PR-586-UBI-0db6f802
+        \end{minted}
+    \end{minipage}
+    \caption{Run Docker Scout scanner}
+    \label{lst:scout}
+\end{listing}
+
+
+\subsubsection*{Trivy} 
+
+Trivy scanner is an open source tool developed by cybersecurity company Aqua Security and is a replacement for their previously well-known vulnerability detector, microscanner. The installation process is rather straightforward and it is described in the manual page (\url{https://aquasecurity.github.io/trivy/v0.50/getting-started/installation/}). To scan an image, trivy tool must be invoked by the following command:
+
+\begin{listing}[htp]
+    \centering
+    \begin{minipage}{0.8\linewidth}
+        \begin{minted}[linenos=false, tabsize=4]{bash}
+trivy image --format sarif -o report.json golang:1.12-alpine
+        \end{minted}
+    \end{minipage}
+    \caption{Run Trivy scanner}
+    \label{lst:trivy}
+\end{listing}
+
+
+\subsubsection{Analysis of obtained scan reports}
+
+After submitting the set of images to each of scanning tool, the reports must undergo the further analysis to determine the effectiveness of the studied software. As the results are presented in JSON format, python libraries such as \texttt{json} and \texttt{pandas} provide us with enough features to calculate the desired quality metrics. 
+
+\subsubsection*{Quality metrics}
+
+
+
+\url{https://en.wikipedia.org/wiki/Precision_and_recall}
