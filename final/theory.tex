@@ -1,20 +1,20 @@
 \section{Theoretical background}
 
-A container is an isolated process that uses a shared kernel \cite{1}. From the user's point of view, a container may appear similarly to a virtual machine, especially when the process inside the container is a shell. However, containers and virtual machines represent the opposite approaches to virtualization. While a virtual machine typically runs a guest kernel that is separate from the host kernel and resides on top of it, containerized applications usually share the host kernel with the host operating system, host processes and other containers. Nevertheless, containerized applications provide a several layers of isolation, including their own network stack, separate root directory and limited access to host resources. This isolation relies on several Linux kernel features including Linux namespaces, \texttt{chroot}, cgroups and capabilities \cite{b:rice}.
+A container is an isolated process that uses a shared kernel \cite{1}. From the user's point of view, a container may appear similarly to a virtual machine, especially when the process inside the container is a shell. However, containers and virtual machines represent the opposite approaches to virtualization. While a virtual machine typically runs a guest kernel that is separate from the host kernel and resides on top of it, containerized applications usually share the host kernel with the host operating system, host processes and other containers. Nevertheless, containerized applications provide a several layers of isolation, including their own network stack, separate root directory and limited access to host resources. This isolation relies on several Linux kernel features including Linux namespaces, \texttt{chroot}, cgroups and capabilities \cite{book:rice}.
 
 \subsection{Isolation features}
 
-\subsubsection{chroot}
+\subsubsection{Chroot}
 
 The first attempts to create an environment similar to modern containers occured when \texttt{chroot} system call was invented. This technology provides root directory isolation, as the process is unable to see or access files outside of the assigned part of file system.
 
-More secure version of the same idea was implemented as \texttt{pivot\_root} system call and it is primarily used by container runtimes instead of chroot \cite{b:rice}.
+More secure version of the same idea was implemented as \texttt{pivot\_root} system call and it is primarily used by container runtimes instead of chroot \cite{book:rice}.
 
 \subsubsection{Cgroups}
 
 Cgroups was the next feature added to the Linux kernel to achieve container isolation. Designed by Google in 2006, cgroups provide the segregation of computing resources. By assigning a control group to the process developers may limit available memory, CPU, disk and network bandwith. Essentially, restricting a process inside certain limits prevents it from exhausting all available resources, which may lead to the denial of service attack.
 
-Cgroups are organised in a hierarchy of controllers and could be intracted with by pseudo file system usually present at \texttt{/sys/fs/cgroup}. Files and subdirectories inside could be used to adjust limits, and writing process ID to cgroup.procs assigns the process to the group \cite{b:rice}.
+Cgroups are organised in a hierarchy of controllers and could be intracted with by pseudo file system usually present at \texttt{/sys/fs/cgroup}. Files and subdirectories inside could be used to adjust limits, and writing process ID to cgroup.procs assigns the process to the group \cite{book:rice}.
 
 In 2006, version 2 of cgroups was merged to the kernel to address the inconsistency between various controllers. In version 2, process may no longer be assigned different cgroups for different types of resources (controllers), and all threads are grouped together \cite{m:cgroups}.
 
@@ -47,10 +47,82 @@ By using namespaces, developers can create environments that are isolated from t
 
 \subsubsection{Capabilities}
 
-Finally, 
+Finally, capabilities have brought a fine-grained division of privileges than in traditional dichotomy of privileged (User ID 0) and unprivileged processes. Since they were introduced in kernel 2.2, it is possible to assign a thread with required groups of privileges so that it may perform certain sensitive actions in necessary parts of the system \cite{m:capabilities}. Modern kernel versions provide about 40 capabilities, including possibility to control system time, interact with kernal audit system, manipulate other processes and file permissions or bind to ports with numbers less than 1024.
 
+Containers as well as regular processes can be assigned with various capabilities. Typically, the set of required capabilities for container to successfully run could be significantly reduced, as containers do not need to run administrative tasks. Docker daemon spawns containers with limited privileges, and necessary ones could be added by developers \cite{d:dockersecurity}. In addition, Docker provides the \texttt{--privileged} flag which grants access
+to an extended range of privileged activities \cite{d:dockerrun}. It was developed to support Docker-in-Docker scenarious, however, it imposes additional security risks.
 
 
 \subsection{Runtimes}
 
+As was shown before, containers are processes with added isolation features. Naturally, it is possible to create an isolated process manually, using chroot to isolate root directory and unshare to isolate assign new namespaces, as demonstrated in Listing \ref{lst:isolated_process} \cite{book:rice}:
+
+\begin{listing}[htp]
+  \centering
+  \begin{minipage}{0.9\linewidth}
+      \begin{minted}[linenos=false, tabsize=4]{bash}
+mkdir alpine
+cd alpine
+curl -o alpine.tar.gz
+    http://dl-cdn.alpinelinux.org/
+    alpine/v3.10/releases/x86_64/alpine-minirootfs-3.10.0-x86_64.tar.gz
+tar xvf alpine.tar.gz
+cd ..
+sudo unshare --user --map-user=0 --uts --mount \ 
+    --net --ipc --pid --fork chroot alpine /bin/sh
+/ # /bin/mount −t proc /proc /proc
+/ # /bin/ps
+PID USER  TIME COMMAND
+1 root  0:00 /bin/sh
+3 root  0:00 /bin/ps
+/ #
+      \end{minted}
+  \end{minipage}
+  \caption{Isolated \texttt{/bin/sh} process}
+  \label{lst:isolated_process}
+\end{listing}
+
+However, this approach is inconvenient for daily usage. Instead, containers are typically handled via container runtimes. As defined in \cite{c:4}, a container runtime is a software that runs the containers and manages container images on a deployment node. While this definition is generally true for popular utilities like dockerd, Open Container Initiative (OCI) Runtime specification regulates only the lifecycle of a container \cite{b:ianlewis1}.
+
+\subsubsection{OCI specification}
+
+The OCI runtime specification was established in 2015 by Docker, CoreOS and other leaders in the container industry, and it currently includes image, distribution and runtime specifications \cite{s:oci}.
+
+According to OCI runtime specification, the user of a compliant runtime must be able to use standard operations, including querying the container state, creating a container from a special set of files (OCI bundle), starting, killing or deleting container \cite{d:ocirunspec}. Both compliant and non-compliant implementations exist in the wild, and runc is the reference implementation of the OCI runtime specification \cite{c:4}.
+
+In his blog post, Ian Lewis suggests to differentiate runtimes on a spectrum from low-level to high-level according to additional functionality they are packed with \cite{b:ianlewis1}. Indeed, while some of them (runc) have only essential methods to manipulate containers, other runtimes provide API, image management, and may, in fact, rely on runc internally. On this spectrum, we may explore such runtimes as runc, crun, youki, lxc, lmctfy, containerd, docker, podman, rkt and cri-o.
+
+In addition to traditional containerization (isolation of a process using the kernel mechanisms), researchers distinguish several technologies that bring the strength of virtual machine isolation to process isolation. X. Wang et al. proposed at their study to divide such related technologies into the Unikernel-like and MicroVM-based sandbox container technologies, namely gVisor, Kata containers, Firecracker and Unikernels (Nabla) \cite{j:1}.
+
+\subsubsection{Traditional runtimes}
+
+\subsubsection*{runc}
+
+runc was initially introduced in 2015 as a separated part of Docker and was presented as ``just the container runtime and nothing else'' \cite{b:dockerrunc}. In fact, runc is a low-level container executor with a very limited set of available features, as runc controls only container lifecycle management. runc is a reference implementation of OCI runtime specification which makes it default choice for many high-level runtime engines.
+
+To run a container with runc, a container bundle must be prepared. Container bundle is a directory which includes config.json file with specification and container root filesystem \cite{m:runc}. The specification file allows users to customize the process environment adjusting the command and arguments, user and group IDs, environment variables, Linux capabilities, mount points, namespaces and devices. runc has a \texttt{spec} command for generating this file. It is also possible to generate specifications for rootless containers, which creates a mapping between host and container User IDs \cite{j:2}.
+
+The full list of commands supported by runc CLI tool is given below:
+\begin{itemize}
+  \item \texttt{checkpoint} — checkpoint a running container;
+  \item \texttt{create} — create a container;
+  \item \texttt{delete} — delete any resources held by the container (often used with detached containers);
+  \item \texttt{events} — display container events, such as OOM notifications, CPU, memory, I/O and network statistics;
+  \item \texttt{exec} — execute a new process inside the container;
+  \item \texttt{kill} — send a specified signal to the container's init process;
+  \item \texttt{list} — list containers started by runc with the given --root;
+  \item \texttt{pause} — suspend all processes inside the container;
+  \item \texttt{ps} — show processes running inside the container;
+  \item \texttt{restore} — restore a container from a previous checkpoint;
+  \item \texttt{resume} — resume all processes that have been previously paused;
+  \item \texttt{run} — create and start a container;
+  \item \texttt{spec} — create a new specification file (config.json);
+  \item \texttt{start} — start a container previously created by runc create;
+  \item \texttt{state} — show the container state;
+  \item \texttt{update} — update container resource constraints.
+\end{itemize}
+
+Although runc has more commands implemented than it is defined in the OCI runtime specification, the implementations of state query, create, start, kill and delete commands are OCI compliant. To deepen the understanding of how runtime works, let us unpack the internals of \texttt{runc create} command.
+
+\subsubsection*{runc create}
 

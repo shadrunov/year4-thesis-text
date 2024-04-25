@@ -2,7 +2,7 @@
   author = {Rani Osnat},
   title  = {A Brief History of Containers: From the 1970s Till Now},
   note   = {\textit{aquasec.com}, Jan. 10, 2020},
-  url    = {{\url{https://www.aquasec.com/blog/a-brief-history-of-containers-from-1970s-chroot-to-docker-2016}. [Accessed: Apr. 23, 2024]}}
+  url    = {{\url{https://www.aquasec.com/blog/a-brief-history-of-containers-from-1970s-chroot-to-docker-2016}. [Accessed: \today]}}
 }
 
 @article{arxiv:1,
@@ -14,7 +14,21 @@
   url     = {\url{https://arxiv.org/abs/2101.03844}}
 }
 
-@book{b:rice,
+@misc{b:dockerrunc,
+  author = {Solomon Hykes},
+  title  = {Introducing runC: a lightweight universal container runtime},
+  note   = {\textit{docker.com}, Jun. 22, 2015},
+  url    = {{\url{https://www.docker.com/blog/runc}. [Accessed: \today]}}
+}
+
+@misc{b:ianlewis1,
+  author = {Ian Lewis},
+  title  = {Container Runtimes Part 1: An Introduction to Container Runtimes},
+  note   = {\textit{ianlewis.org}, Dec. 6, 2017},
+  url    = {{\url{https://www.ianlewis.org/en/container-runtimes-part-1-introduction-container-r}. [Accessed: \today]}}
+}
+
+@book{book:rice,
   author    = {Liz Rice},
   publisher = {O'Reilly Media},
   title     = {Container security: Fundamental technology concepts that protect containerized applications},
@@ -43,30 +57,112 @@
   doi       = {10.1109/CCWC47524.2020.9031195}
 }
 
+@inproceedings{c:3,
+  author    = {Abhishek, Manish Kumar and Rajeswara Rao, D.},
+  booktitle = {2021 Fifth World Conference on Smart Trends in Systems Security and Sustainability (WorldS4)},
+  title     = {Framework to Secure Docker Containers},
+  year      = {2021},
+  pages     = {152-156},
+  doi       = {10.1109/WorldS451998.2021.9514041}
+}
+
+@inproceedings{c:4,
+  author    = {Espe, Lennart and Jindal, Anshul and Podolskiy, Vladimir and Gerndt, Michael},
+  title     = {Performance evaluation of container runtimes},
+  doi       = {10.5220/0009340402730281},
+  booktitle = {Proceedings of the 10th International Conference on Cloud Computing and Services Science},
+  year      = {2020}
+}
+
+@misc{d:dockerrun,
+  author = {},
+  title  = {Running containers},
+  note   = {\textit{docs.docker.com}, Feb. 21, 2024},
+  url    = {{\url{https://docs.docker.com/engine/reference/run}. [Accessed: \today]}}
+}
+
+
 @misc{d:dockersecurity,
   author = {},
   title  = {Docker security},
   note   = {\textit{docs.docker.com}, Feb. 21, 2024},
-  url    = {{\url{https://docs.docker.com/engine/security}. [Accessed: Apr. 24, 2024]}}
+  url    = {{\url{https://docs.docker.com/engine/security}. [Accessed: \today]}}
+}
+
+@misc{d:ocirunspec,
+  author = {},
+  title  = {Open Container Initiative Runtime Specification},
+  note   = {\textit{dgithub.com}, May 16, 2023},
+  url    = {{\url{https://github.com/opencontainers/runtime-spec/blob/main/spec.md}. [Accessed: \today]}}
+}
+
+@article{j:1,
+  author  = {Wang, Xingyu and Du, Junzhao and Liu, Hui},
+  title   = {Performance and isolation analysis of RunC, gVisor and Kata Containers runtimes},
+  journal = {Cluster Computing},
+  volume  = {25},
+  pages   = {1497-1513},
+  year    = {2022}
+}
+
+
+@article{j:2,
+  author  = {Jorge Gomes and Emanuele Bagnaschi and Isabel Campos and Mario David and Luís Alves and João Martins and João Pina and Alvaro López-García and Pablo Orviz},
+  title   = {Enabling rootless Linux Containers in multi-user environments: The udocker tool},
+  journal = {Computer Physics Communications},
+  volume  = {232},
+  pages   = {84-97},
+  year    = {2018},
+  issn    = {0010-4655},
+  doi     = {https://doi.org/10.1016/j.cpc.2018.05.021},
+  url     = {\url{https://www.sciencedirect.com/science/article/pii/S0010465518302042}. [Accessed: \today]}
+}
+
+@misc{m:capabilities,
+  author = {},
+  title  = {capabilities(7) — Linux manual page},
+  note   = {\textit{man7.org}, Dec. 22, 2023},
+  url    = {{\url{https://man7.org/linux/man-pages/man7/capabilities.7.html}. [Accessed: \today]}}
 }
 
 @misc{m:cgroups,
   author = {},
   title  = {cgroups(7) — Linux manual page},
   note   = {\textit{man7.org}, Dec. 22, 2023},
-  url    = {{\url{https://man7.org/linux/man-pages/man7/cgroups.7.html}. [Accessed: Apr. 23, 2024]}}
+  url    = {{\url{https://man7.org/linux/man-pages/man7/cgroups.7.html}. [Accessed: \today]}}
 }
 
 @misc{m:namespaces,
   author = {},
   title  = {namespaces(7) — Linux manual page},
   note   = {\textit{man7.org}, Dec. 22, 2023},
-  url    = {{\url{https://man7.org/linux/man-pages/man7/namespaces.7.html}. [Accessed: Apr. 23, 2024]}}
+  url    = {{\url{https://man7.org/linux/man-pages/man7/namespaces.7.html}. [Accessed: \today]}}
+}
+
+@misc{m:runc,
+  author = {},
+  title  = {runc(8)	System Manager's Manual},
+  note   = {\textit{man.archlinux.org}},
+  url    = {{\url{https://man.archlinux.org/man/extra/runc/runc.8.en}. [Accessed: \today]}}
+}
+
+@misc{report:dynamic,
+  author = {Rony Moshkovich},
+  title  = {Industry's First Dynamic Analysis of 4 million Publicly Available Docker Hub Container Images},
+  note   = {\textit{prevasio.io}, Dec. 1, 2020},
+  url    = {{\url{https://uploads-ssl.webflow.com/609ccd86b14ba6e17f9fbce4/643ba6fc599bb82bfdea2456_Red_Kangaroo.pdf}. [Accessed: \today]}}
 }
 
 @misc{s:namespaces,
   author = {Michael Kerrisk},
   title  = {Namespaces in operation, part 1: namespaces overview},
   note   = {\textit{lwn.net}, Jan. 4, 2013},
-  url    = {{\url{https://lwn.net/Articles/531114}. [Accessed: Apr. 24, 2024]}}
+  url    = {{\url{https://lwn.net/Articles/531114}. [Accessed: \today]}}
+}
+
+@misc{s:oci,
+  author = {},
+  title  = {Open Container Initiative},
+  note   = {},
+  url    = {{\url{https://opencontainers.org/}. [Accessed: \today]}}
 }
