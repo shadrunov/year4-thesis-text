@@ -16,6 +16,21 @@ The opposite way to detect vulnerabilities in containers is to observe its runti
 
 The process of image attestation with static analyser may be described as following. First, the scanner compiles the list of all installed packages and libraries inside the image along with their versions. Next, each package is checked upon publically available vulnreability databases and marked as vulnerable or safe to use. This explains why various mistakes could easily occur during the detection process, or why reports from different scanners are not identical. Each scanner gets vulnerability information from various sources including per-distribution security advisories (Ubuntu Oval database, Debian Security Tracker, RHEL Oval database, to name but a few) or general vulnerability databases such as NVD (National Vulnerability Database). The information in these sources are of various degrees of relevance. Special treatment must be provided to the vulnerabilities that will not be fixed due to its negligibility. Finally, names of the packages may vary between distributions. All these reasons lead to false negative results, when a vulnerable package is marked as save. On the contrary, some packages are organised in groups, and incorrect treatment of the whole group because of one package can probably cause false positive results. Overall, the scanning report shoud be carefully considered in each individual case \cite{book:rice}.
 
+\subsection{Existing tools}
+
+The range of available static vulnerability scanners is wide. 
+
+\subsubsection{Clair}
+
+
+\subsubsection{Trivy}
+
+
+\subsubsection{Docker Scout}
+
+
+
+
 
 \subsection{Methodology}
 The process of data acquisition and the following analysis for this part of research could be divided into several stages Firstly, a set of container images and tags for scanning was composed. For this purpose Docker Hub API were employed. Then, each image was submitted to each scanning tool and vulnerability report was stored on disk in JSON format. After scanning, reports were combined and number of vulnerabilities for each image was calculated. Based on this calculations the metrics of detection quality were aggregated for each scanning tool.

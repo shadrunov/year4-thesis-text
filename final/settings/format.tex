@@ -6,8 +6,8 @@
 % \newfontfamily{\timesfont}{Times New Roman}[Script=Cyrillic]
 
 \newfontfamily{\cyrillicfont}{CMU Serif}[Script=Cyrillic]
-% \newfontfamily{\cyrillicfontrm}{CMU Serif}[Script=Cyrillic]
-% \newfontfamily{\cyrillicfontsf}{CMU Serif}[Script=Cyrillic]
+\newfontfamily{\cyrillicfontrm}{CMU Serif}[Script=Cyrillic]
+\newfontfamily{\cyrillicfontsf}{CMU Serif}[Script=Cyrillic]
 % \newfontfamily{\cyrillicfonttt}{Courier New}
 
 \defaultfontfeatures{Ligatures=TeX}
@@ -56,10 +56,22 @@
 % page number font sans serif
 \usepackage{etoolbox}
 \makeatletter
-\patchcmd{\ps@plain}{\thepage}{\sffamily\thepage}{}{}
+\patchcmd{\ps@plain}{\thepage}{\rmfamily\thepage}{}{}
 \makeatother
 \pagestyle{plain}
+
+% \usepackage{fancyhdr}
+
+% \fancypagestyle{plain}{%
+% \fancyhf{} % clear all header and footer fields
+% \fancyfoot[C]{\rmfamily\selectfont\thepage} % except the center
+% \renewcommand{\headrulewidth}{0pt}
+% \renewcommand{\footrulewidth}{0pt}
+% }
+% \pagestyle{plain}
+
 % indentation for items
 \usepackage{enumitem}
 \setlist{align=right,itemindent=1.25cm,leftmargin=0pt,nolistsep}
 \renewcommand{\labelitemi}{-}
+
