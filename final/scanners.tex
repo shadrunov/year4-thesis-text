@@ -18,21 +18,130 @@ The process of image attestation with static analyser may be described as follow
 
 \subsection{Existing tools}
 
-The range of available static vulnerability scanners is wide. 
+The range of static vulnerability scanning tools available on the market is wide. From this extensive selection, we have chosen several for further evaluation. For the experiment, it was crucial that the scanning tool could run locally via the command line, as this allows for automation using Python scripts and the ability to process thousands of images for testing. Additionally, we wanted to ensure that the tool was either free or offered a sufficient trial period to meet our needs. After careful consideration, we selected the following tools: Clair, Trivy, Docker Scout, Anchore Grype, Snyk, and one provided by a cloud provider known as Google Artifact Registry.
 
 \subsubsection{Clair}
 
+Clair is a static analysis tool developed by CoreOS in 2015 to uncover vulnerabilities in containers that had previously remained unnoticed \cite{s:clair2015}. After CoreOS was discontinued in 2020, Clair can be used either as a standalone solution or as part of Project Quay, a container image registry that offers additional features such as image scanning \cite{s:what-is-clair}.
+
+Clair performs a static analysis of container images. It scans each layer of the container image and identifies the packages contained within it. These packages are then evaluated against public vulnerability databases to identify any known potential security breaches. 
+
+To identify vulnerabilities, Clair uses the following security databases \cite{s:clair-intro2}:
+
+\begin{itemize}
+    \item Ubuntu Oval database
+    \item Debian Security Tracker
+    \item Red Hat Enterprise Linux (RHEL) Oval database
+    \item SUSE Oval database
+    \item Oracle Oval database
+    \item Alpine SecDB database
+    \item VMware Photon OS database
+    \item Amazon Web Services (AWS) UpdateInfo
+    \item Open Source Vulnerability (OSV) Database
+\end{itemize}
+
+However, in local installations, Clair only recieves information from Ubuntu, Debian, Red Hat Enterprise Linux (RHEL), Alpine and the Open Source Vulnerabilities (OSV) databases.
+
+Structurally, the Clair backend, which is composed of several daemons, such as Indexer, Matcher, and Notifier, runs in the background \cite{d:clairdeployment}. Upon startup, it downloads and maintains a local list of vulnerabilities that is stored in a Postgres database. To interact with the Clair backend, a special client tool called clairctl is used. clairctl pulls an image archive, pushes image layers to the Clair API, receives the results and presents them in a selected format. The results can be displayed on the screen or saved as a JSON file in a machine-readable format for later processing.
+
+The latter feature simplifies the integration of Clair into the CI/CD pipeline for building and shipping containers. However, due to its design, Clair requires a significant amount of time to fully compile its vulnerability database, ranging from 20 to 30 minutes. To speed up this process, enthusiasts attempted to distribute preconfigured database images. A corresponding project can be found on GitHub (\url{https://github.com/arminc/clair-local-scan}). However, the feasibility of this approach is questionable due to the lack of support.
+
+To run Clair locally, we used the Docker images from the official repository (\url{https://github.com/quay/clair}). A special docker-compose file, listed in Appendix \ref{appendix:clair-compose}, helps to run the database and scanner containers. The \texttt{clairctl} command-line tool, which is included with the Clair package, pulls the image from Docker Hub and passes it to the Clair backend. The deployment process is described in the Clair documentation (\url{https://quay.github.io/clair/howto/getting_started.html}). An example of a command that needs to be executed to scan an image is provided below:
+
+\begin{listing}[htp]
+    \centering
+    \begin{minipage}{0.95\linewidth}
+        \begin{minted}[linenos=false, tabsize=4]{bash}
+clairctl report --out json fluent/fluent-bit:2.0.8-debug > report.json
+        \end{minted}
+    \end{minipage}
+    \caption{Run Clair scanner}
+    \label{lst:clair}
+\end{listing}
+
+Upon completing the analysis, Clair generates a report that includes several sections, including information about the examined packages, the detected Linux distribution in the base image, and a list of vulnerabilities. For each vulnerability, Clair provides information about its identification in a database (for example, the CVE number), severity and the packages where the vulnerability was found. Additionally, the report indicates whether a fix for the vulnerability has already been released.
+
+Overall, Clair is one of most established solutions for static container analysis and can be effectively used to gain insight into what is built and deployed in production systems. While its modular architecture may make the installation process more complicated, it provides a wide range of customization options for different environments and scalability for large-scale deployment systems. Later, we will explore the results of using Clair and compare them to other scanning tools.
 
 \subsubsection{Trivy}
 
+Trivy is an open-source scanner developed by Aqua Security, a cloud security company founded in 2015. It is a replacement for Microscanner, another vulnerability detector developed previously by the same company. The main advantage of Trivy over other scanning tools is the simplicity of installation. To begin scanning, developers simply need to download an executable file from the vendor's website or the package manager. Trivy can scan not only container images, but also file systems, Git repositories, Virtual Machine images and Infrastructure as code files \cite{d:trivystart}. In addition to detecting vulnerabilities, Trivy also checks for misconfigurations, such as secrets or sensitive information stored in plain text.
+
+To demonstrate the scanning process, the Trivy tool can be executed by using the command provided in Listing \ref{lst:trivy}.
+
+\begin{listing}[htp]
+    \centering
+    \begin{minipage}{0.75\linewidth}
+        \begin{minted}[linenos=false, tabsize=4]{bash}
+trivy image --format sarif -o report.json golang:1.12-alpine
+        \end{minted}
+    \end{minipage}
+    \caption{Run Trivy scanner}
+    \label{lst:trivy}
+\end{listing}
+
+Internally, Trivy collects information about vulnerabilities from a wide range of sources, including security databases from major Linux distributions. It supports approximately 15 base images and, in addition, language-specific components such as libraries for approximately 12 programming languages, including Python, Go and C++ \cite{d:trivyvulnerability}. It is especially impressive considering that all these processes take place automatically and do not require any user intervention.
+
+Trivy can also be used as part of a CI/CD pipeline. It is compatible with major continuous integration systems, such as GitHub Actions, GitLab CI and Travis CI. To facilitate integration with other tools and environments, Trivy provides various output formats, including human-readable text, JSON, and SERIF, which is a standard format for static code analysis. The JSON report contains information about the tool that was used for scanning, the vulnerabilities found their location in the image and the severity level.
+
+In conclusion, Trivy is a recently developed and actively maintained open-source tool that focuses on the user-friendly approach. It provides wide support for various distributions, programming languages and platforms. With its extensive range of scanning features, Trivy makes it an ideal choice for setting up static analysis on containerized applications.
+
 
 \subsubsection{Docker Scout}
+
+Docker Scout is a new container security solution from Docker. It replaces the legacy Docker Scan tool and was made available to the general public in October 2023 \cite{s:scoutga}. 
+
+Docker Scout can be used as a standalone plugin. To run Docker Scout plugin locally, it must be installed and then invoked as shown in Listing \ref{lst:scout}. Alternatively, Docker Scout can be integrated with Docker Hub, where developers can view the results of scanning their images from the cloud. An example of the Docker Scout dashboard can be seen in Figure \ref{}.
+
+
+\begin{listing}[htp]
+    \centering
+    \begin{minipage}{1\linewidth}
+        \begin{minted}[linenos=false, tabsize=4]{bash}
+# installation:
+curl -fsSL \
+    https://raw.githubusercontent.com/docker/scout-cli/main/install.sh \
+    -o install-scout.sh
+sh install-scout.sh
+
+# usage:
+docker scout cves --format sarif --output report.json \
+    stakater/reloader:SNAPSHOT-PR-586-UBI-0db6f802
+        \end{minted}
+    \end{minipage}
+    \caption{Run Docker Scout scanner}
+    \label{lst:scout}
+\end{listing}
+
+Otherwise, Docker Scout supports integrations with several third-party systems, such as container registries (JFrog Artifactory, Amazon and Azure container regstries) and CI/CD platforms (GitHub Actions, GitLab and Jenkins).
+
+As a data source, Docker Scout aggregates vulnerability information from various sources, including Linux distribution advisories, language-specific databases, GitHub and GitLab advisory systems as well as the National Vulnerability Database \cite{d:scoutdb}. Unlike other scanner tools, Docker Scout utilizes Package URLs (PURLs) rather than the Common Product Enumeration (CPE) system, which, according to its developers, significantly reduces the likelihood of false positive results.
+
+For the purposes of our evaluation, we primarily focus on the \texttt{docker scout cves} command, which generates a vulnerability report for a selected image. This command is not limited to images, but can also be used for OCI bundles and local files. The tool's output can be generated in plain text, SARIF or SBOM (Software Bill of Materials) formats. The SERIF-formatted report is compatible with other tools.
+
+
+\subsubsection{Anchore Grype}
+
+
+\subsubsection{Snyk}
+
+
+
+
+\subsubsection{Google Artifact Registry}
+
+
+
+
+
+
 
 
 
 
 
 \subsection{Methodology}
+
 The process of data acquisition and the following analysis for this part of research could be divided into several stages Firstly, a set of container images and tags for scanning was composed. For this purpose Docker Hub API were employed. Then, each image was submitted to each scanning tool and vulnerability report was stored on disk in JSON format. After scanning, reports were combined and number of vulnerabilities for each image was calculated. Based on this calculations the metrics of detection quality were aggregated for each scanning tool.
 
 \subsubsection{Images selection}
@@ -102,54 +211,18 @@ Next steps were performed on a virtual machine with 16 vCPU and 32 Gb RAM. As a 
 
 \subsubsection*{Clair}
 
-To run Clair scanner locally, its Docker images were used from official repository (\url{https://github.com/quay/clair}). A special docker-compose file listed in Appendix \ref{appendix:clair-compose} helps to run database and scanner containers, and \texttt{clairctl} command line tool actually pulls the image from Docker Hub and passes it to the scanner. The deployment process is described in the manual (\url{https://quay.github.io/clair/howto/getting_started.html}). An example of command which must be executed is listed below. 
 
-\begin{listing}[htp]
-    \centering
-    \begin{minipage}{0.9\linewidth}
-        \begin{minted}[linenos=false, tabsize=4]{bash}
-clairctl report --out json fluent/fluent-bit:2.0.8-debug > report.json
-        \end{minted}
-    \end{minipage}
-    \caption{Run Clair scanner}
-    \label{lst:clair}
-\end{listing}
 
 
 \subsubsection*{Scout}
 
-Scout scanner is developed by Docker and shipped as a plugin for the docker CLI tool. Installation process is described in the manual (\url{https://docs.docker.com/scout/install/}).
 
-To scan image with docker scout, the following command must be issued.
 
-\begin{listing}[htp]
-    \centering
-    \begin{minipage}{0.8\linewidth}
-        \begin{minted}[linenos=false, tabsize=4]{bash}
-docker scout cves --format sarif \ 
-        --output report.json \
-        stakater/reloader:SNAPSHOT-PR-586-UBI-0db6f802
-        \end{minted}
-    \end{minipage}
-    \caption{Run Docker Scout scanner}
-    \label{lst:scout}
-\end{listing}
 
 
 \subsubsection*{Trivy} 
 
-Trivy scanner is an open source tool developed by cybersecurity company Aqua Security and is a replacement for their previously well-known vulnerability detector, microscanner. The installation process is rather straightforward and it is described in the manual page (\url{https://aquasecurity.github.io/trivy/v0.50/getting-started/installation/}). To scan an image, trivy tool must be invoked by the following command:
 
-\begin{listing}[htp]
-    \centering
-    \begin{minipage}{0.8\linewidth}
-        \begin{minted}[linenos=false, tabsize=4]{bash}
-trivy image --format sarif -o report.json golang:1.12-alpine
-        \end{minted}
-    \end{minipage}
-    \caption{Run Trivy scanner}
-    \label{lst:trivy}
-\end{listing}
 
 
 \subsubsection{Analysis of obtained scan reports}
@@ -158,6 +231,6 @@ After submitting the set of images to each of scanning tool, the reports must un
 
 \subsubsection*{Quality metrics}
 
-
+https://habr.com/ru/articles/661119/
 
 \url{https://en.wikipedia.org/wiki/Precision_and_recall}
