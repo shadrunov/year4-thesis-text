@@ -1,5 +1,4 @@
 \section{Vulnerability detection}
-
 \subsection{Previous studies}
 
 The researches upon the quality and effectiveness of vulnerabilities detection tools have already been attempted. One of the most compregensive works was published by Omar Javed and Salman Toor in 2021 \cite{arxiv:1}. The approach described in the paper was based on several open source scanners (namely, Clair, Anchore, and Microscanner). After inspecting 59 Docker images for Java-based applications, the authors calculate detection coverage and detection hit ratio metrics and conclude that the most accurate tool (Anchore) was omitting around 34\% of vulnerabilities. A major limitation of their work is a relatively small number of images used to evaluate the performance of scanning tools as well as the range of scanners examined.
@@ -8,6 +7,7 @@ Another paper by K. Brady et al. described the CI/CD pipeline which combined sta
 
 Massive research was conducted in 2020 by security company Prevasio. As the report states, all 4 million of public images from Docker Hub were scanned with static analyser (Trivy) and dynamic analyser, and more than half of all images were discovered to have critical vulnerabilities \cite{report:dynamic}. Significant number of images were containing dynamically downloaded payload, cryptominers and other malicious software.
 
+\clearpage
 \subsection{Static analysers}
 
 Vulnerability scanners are special tools that identify known software vulnerabilities inside containers. Two approaches to this issue are known. First, it is possible to analyse versions of all the software in container image and check its safety. This approach is called static analysis, as it does not require any container to run, which speads up the process. However, static analysis has significant limitations, because the vulnerability databases take time to include recently discovered vulnerabilities, and container must not download any other packages besides what is included in the image. Finally, malicious but not yet reported packages cannot be discovered by static analysers. Nevertheless, this technology is extensively used in CI/CD pipelines to minimize risks of attack and container compromisation.
@@ -16,6 +16,7 @@ The opposite way to detect vulnerabilities in containers is to observe its runti
 
 The process of image attestation with static analyser may be described as following. First, the scanner compiles the list of all installed packages and libraries inside the image along with their versions. Next, each package is checked upon publically available vulnreability databases and marked as vulnerable or safe to use. This explains why various mistakes could easily occur during the detection process, or why reports from different scanners are not identical. Each scanner gets vulnerability information from various sources including per-distribution security advisories (Ubuntu Oval database, Debian Security Tracker, RHEL Oval database, to name but a few) or general vulnerability databases such as NVD (National Vulnerability Database). The information in these sources are of various degrees of relevance. Special treatment must be provided to the vulnerabilities that will not be fixed due to its negligibility. Finally, names of the packages may vary between distributions. All these reasons lead to false negative results, when a vulnerable package is marked as save. On the contrary, some packages are organised in groups, and incorrect treatment of the whole group because of one package can probably cause false positive results. Overall, the scanning report shoud be carefully considered in each individual case \cite{book:rice}.
 
+\clearpage
 \subsection{Existing tools}
 
 The range of static vulnerability scanning tools available on the market is wide. From this extensive selection, we have chosen several for further evaluation. For the experiment, it was crucial that the scanning tool could run locally via the command line, as this allows for automation using Python scripts and the ability to process thousands of images for testing. Additionally, we wanted to ensure that the tool was either free or offered a sufficient trial period to meet our needs. After careful consideration, we selected the following tools: Clair, Trivy, Docker Scout, Anchore Grype, Snyk, and one provided by a cloud provider known as Google Artifact Registry.
@@ -91,20 +92,20 @@ In conclusion, Trivy is a recently developed and actively maintained open-source
 
 Docker Scout is a new container security solution from Docker. It replaces the legacy Docker Scan tool and was made available to the general public in October 2023 \cite{s:scoutga}. 
 
-Docker Scout can be used as a standalone plugin. To run Docker Scout plugin locally, it must be installed and then invoked as shown in Listing \ref{lst:scout}. Alternatively, Docker Scout can be integrated with Docker Hub, where developers can view the results of scanning their images from the cloud. An example of the Docker Scout dashboard can be seen in Figure \ref{}.
+Docker Scout can be used as a standalone plugin. To run Docker Scout plugin locally, it must be installed and then invoked as shown in Listing \ref{lst:scout}. Alternatively, Docker Scout can be integrated with Docker Hub, where developers can view the results of scanning their images from the cloud. An example of the Docker Scout dashboard can be seen in Figure \ref{img:scout}. It is also worth noting that the cloud version of Docker Scout requires a subscription to Docker. Otherwise, users can only use three repositories free of charge.
 
 
 \begin{listing}[htp]
     \centering
     \begin{minipage}{1\linewidth}
         \begin{minted}[linenos=false, tabsize=4]{bash}
-# installation:
+# installation
 curl -fsSL \
     https://raw.githubusercontent.com/docker/scout-cli/main/install.sh \
     -o install-scout.sh
 sh install-scout.sh
 
-# usage:
+# usage
 docker scout cves --format sarif --output report.json \
     stakater/reloader:SNAPSHOT-PR-586-UBI-0db6f802
         \end{minted}
@@ -117,29 +118,116 @@ Otherwise, Docker Scout supports integrations with several third-party systems, 
 
 As a data source, Docker Scout aggregates vulnerability information from various sources, including Linux distribution advisories, language-specific databases, GitHub and GitLab advisory systems as well as the National Vulnerability Database \cite{d:scoutdb}. Unlike other scanner tools, Docker Scout utilizes Package URLs (PURLs) rather than the Common Product Enumeration (CPE) system, which, according to its developers, significantly reduces the likelihood of false positive results.
 
+\image{scout.png}{Docker Scout dashboard}{img:scout}{1}
+\FloatBarrier
+
 For the purposes of our evaluation, we primarily focus on the \texttt{docker scout cves} command, which generates a vulnerability report for a selected image. This command is not limited to images, but can also be used for OCI bundles and local files. The tool's output can be generated in plain text, SARIF or SBOM (Software Bill of Materials) formats. The SERIF-formatted report is compatible with other tools.
 
 
 \subsubsection{Anchore Grype}
 
+Anchore Grype is a vulnerability scanning tool for container images and file systems, maintained by Anchore since 2020 \cite{s:anchore}. As a static analysis tool, Grype examines the contents of container images to identify known vulnerabilities in all major operating system and language-specific packages \cite{gh:grype}.
+
+To simplify the user experience, Grype is distributed as a single binary from the release pages of package managers. Listing \ref{lst:grype} demonstrates how Grype can be installed and used in a local environment. Additionally, Grype can also be used as part of a GitHub Actions pipeline.
+
+
+\begin{listing}[htp]
+    \centering
+    \begin{minipage}{1\linewidth}
+        \begin{minted}[linenos=false, tabsize=4]{bash}
+# installation
+curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh \
+    | sh -s -- -b /usr/local/bin
+
+# usage:
+grype stakater/reloader:latest -o json > report.json
+        \end{minted}
+    \end{minipage}
+    \caption{Run Docker Scout scanner}
+    \label{lst:grype}
+\end{listing}
+
+This command generates a compliance report that provides information about vulnerabilities found in the Grype database, as well as information about the image metadata and Linux distribution used to create the image. Each vulnerability is described with a CVE identifier, severity level, and CVSS score. The report also includes information on how to fix the vulnerability and links to additional resources. In some cases, related vulnerabilities may be included, such as when an advisory from GitHub has a corresponding CVE entry in the national vulnerability database. Another useful section of the report provides details about each match, explaining the exact information about the package that led to the detection of the vulnerability.
+
+Grype supports a variety of formats, including JSON, SARIF, and tabular or XML, as well as other formats. Grype collects data from various publicly available vulnerability sources, such as advisories for popular Linux distributions and the National Vulnerability Database (NVD). The local database is automatically maintained by the scanner. However, developers can also use special commands to update or manually check the database.
+
+Anchore Grype is a great tool for both local development and in CI/CD pipelines. It is free to use and produces detailed and accurate results. we will evaluate the quality of Grype reports for Docker images that are used in our experiments.
+
 
 \subsubsection{Snyk}
 
+Snyk is a comprehensive solution for securing open-source libraries, application code, container images and Kubernetes applications. It also provides infrastructure as code file protection, such as Terraform configurations. As a security company, Snyk was founded in 2015, during the rapid development of containerized technologies. Developers can access Snyk through a web UI or by using the snyk CLI tool \cite{gh:snyk}. A subscription is also available, which provides additional features such as private repository evaluation.
 
 
+As other major scanning tools, Snyk can be integrated into the CI/CD pipelines of Jenkins and GitHub Actions, as well as popular IDEs such as VS Code and JetBrains. Additionally, Snyk supports Git repositories, cloud providers, and package managers, including npm and the Nexus repository. However, for the objectives of our evaluation, it is sufficient to run Snyk locally using the command line, as demonstrated in Listing \ref{lst:snyk}. Unlike other scanning tools, Snyk requires authentication with a developer account using an API token.
+
+\begin{listing}[htp]
+    \centering
+    \begin{minipage}{0.9\linewidth}
+        \begin{minted}[linenos=false, tabsize=4]{bash}
+# installation
+curl --compressed https://static.snyk.io/cli/latest/snyk-linux -o snyk
+chmod +x ./snyk
+mv ./snyk /usr/local/bin/
+
+# authentication
+snyk auth de452e65-...
+
+# usage:
+snyk container test --sarif-file-output=report.json ubuntu:16.04 -d
+        \end{minted}
+    \end{minipage}
+    \caption{Snyk scanner}
+    \label{lst:snyk}
+\end{listing}
+
+The results from Snyk can be presented in a serial format and easily processed by other tools. Snyk discovers vulnerabilities by relying on advisories from operating system maintainers and detects vulnerabilities in images based on all major Linux distributions and a range of programming languages.
+
+In addition to its image scanning capabilities, Snyk provides a range of tools to help ensure the security of the software development process at every stage of the lifecycle. Overall, Snyk is a valuable asset for both individual developers and teams.
 
 \subsubsection{Google Artifact Registry}
 
+In the previous section, we discussed the tools that are used for scanning in a local environment or as a part of deployment pipeline. These tools are mostly open source (except for Docker Scout), and they operate with a local database of vulnerability detection rules. Next, we will discuss cloud-based scanning utilities. These are offered as SaaS platforms by cloud providers and have an operating cost, usually based on the number of scans. 
+
+Most providers offer such solutions, including image scanning in Amazon Elastic Container Registry, Azure Container Registry and Yandex Container Registry. We will be focusing on a specific cloud-based scanner that is integrated with Google Artifact Registry. Artifact Registry is a unified storage solution for images and packages from different sources. When vulnerability scanning is enabled, this service automatically scans images as they are pushed to the registry to detect known security vulnerabilities and exposures.
+
+Static analysis provided by Google is an integral part of its registry. Therefore, Artifact Analysis scans for vulnerabilities, dependencies, and licenses only the images pushed or pulled to the cloud. To ensure a constant level of security, two approaches are used: on-push scanning and continuous analysis \cite{d:gcp}. Firstly, each new image is analyzed upon uploading to Artifact Registry. After the scan is completed, the registry generates a report containing detected CVEs, their severity and CVSS scores, whether a fix is available and affected packages. The report also provides information about licenses and dependencies. The report can be accessed through the Google Cloud console, and an example is provided in Figure \ref{img:gar}.
 
 
+\image{gar.png}{Google Artifact Registry}{img:gar}{1}
+\FloatBarrier
+
+After the initial analysis, the registry will continue to update the image evaluation as new information becomes available from vulnerability sources every day. Google gathers information from Linux distributions advisories and the GitHub Advisory Database for language packages.
+
+For convenience, the report can be retrieved using the CLI tool called \texttt{gcloud}. To obtain scan results for a set of Docker Hub images, we have implemented the following process. Firstly, we set up Artifact Registry as a proxy for Docker Hub, which means it downloads and caches images in the registry upon user request to Docker Hub. When an image is processed through the registry, it is scanned and a report is generated and saved in the cloud. Meanwhile, to release disk space, the image is deleted from the local machine as it is no longer needed. After a while, the second iteration is performed to query the results of the image evaluation using the \texttt{gcloud} tool. The entire process is illustrated in Figure \#TODO add figure, and the necessary commands are given in Listing \ref{lst:gcloud}.
+
+\begin{listing}[htp]
+    \centering
+    \begin{minipage}{0.85\linewidth}
+        \begin{minted}[linenos=false, tabsize=4]{bash}
+# pull image
+docker pull west1-docker.pkg.dev/proud/shadrunov/ubuntu:16.04
+
+# retrieve security report
+gcloud artifacts docker images describe \
+    west1-docker.pkg.dev/proud/shadrunov/ubuntu:16.04 \
+    --show-package-vulnerability \
+    --format json > report.json
+
+# remove image from local machine
+docker image rm west1-docker.pkg.dev/proud/shadrunov/ubuntu:16.04
+        \end{minted}
+    \end{minipage}
+    \caption{Vulnerability scanning with \texttt{gcloud} tool}
+    \label{lst:gcloud}
+\end{listing}
+
+Overall, the Google Cloud Platform offers an easy-to-use tool for those who prefer sticking to cloud solutions. As part of its design, it provides continuous monitoring for the security of images stored in the cloud, which is an advantage over one-time scanning approach. Other tools are also striving to implement this feature, as was discussed by the example of Docker Scout, which has a similar feature when applied to cloud repositories.
+
+After discussing the various scanning solutions available on the market and their capabilities and limitations, we can now proceed to describe how we collect data from each scanner report over a set of several thousand Docker Hub images.
 
 
-
-
-
-
-
-
+\clearpage
 \subsection{Methodology}
 
 The process of data acquisition and the following analysis for this part of research could be divided into several stages Firstly, a set of container images and tags for scanning was composed. For this purpose Docker Hub API were employed. Then, each image was submitted to each scanning tool and vulnerability report was stored on disk in JSON format. After scanning, reports were combined and number of vulnerabilities for each image was calculated. Based on this calculations the metrics of detection quality were aggregated for each scanning tool.

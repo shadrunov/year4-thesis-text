@@ -52,7 +52,7 @@ Finally, capabilities have brought a fine-grained division of privileges than in
 Containers as well as regular processes can be assigned with various capabilities. Typically, the set of required capabilities for container to successfully run could be significantly reduced, as containers do not need to run administrative tasks. Docker daemon spawns containers with limited privileges, and necessary ones could be added by developers \cite{d:dockersecurity}. In addition, Docker provides the \texttt{--privileged} flag which grants access
 to an extended range of privileged activities \cite{d:dockerrun}. It was developed to support Docker-in-Docker scenarious, however, it imposes additional security risks.
 
-
+\clearpage
 \subsection{Runtimes}
 
 As was shown before, containers are processes with added isolation features. Naturally, it is possible to create an isolated process manually, using chroot to isolate root directory and unshare to isolate assign new namespaces, as demonstrated in Listing \ref{lst:isolated_process} \cite{book:rice}:
@@ -94,6 +94,7 @@ In his blog post, Ian Lewis suggests to differentiate runtimes on a spectrum fro
 
 In addition to traditional containerization (isolation of a process using the kernel mechanisms), researchers distinguish several technologies that bring the strength of virtual machine isolation to process isolation. X. Wang et al. proposed at their study to divide such related technologies into the Unikernel-like and MicroVM-based sandbox container technologies, namely gVisor, Kata containers, Firecracker and Unikernels (Nabla) \cite{j:1}.
 
+\clearpage
 \subsubsection{Traditional runtimes}
 
 \subsubsection*{runc}
@@ -227,6 +228,8 @@ rkt (Rocket) is a single-binary Docker alternative, initially released in Decemb
 
 While rkt has several advantages compared to other runtimes, it has been discontinued since 2020 and and recieves no more development or maintenance \cite{gh:rkt}.
 
+
+\clearpage
 \subsubsection{Alternative runtimes}
 
 We have already observed various runtimes that provide containerization based on kernel security and isolation features such as cgroups, namespaces and root filesystem isolation. The common flaw of these runtimes is the shared kernel, which poses additional security risks. The following runtimes overcome this disadvantage by moving from host kernel to guest kernel in one way or another.
@@ -258,6 +261,7 @@ To manipulate Nabla containers, a special OCI-compliant command line tool known 
 While Unikernels approach provides the desirable degree of isolation comparable to virtual machines, some researchers highlight several issues, such as incompatibility with current VM managing tools, difficulty to debug applications and excessive overhead of nested virtualization when running Nabla containers with hypervisors. A possible mitigation of these challenges was proposed by Williams et al \cite{acm:4}. They suggest a way of running unikernels as processes by leveraging existing kernel system call whitelisting mechanisms (seccomp).
 
 
+\clearpage
 \subsection{Vulnerabilities and attack surface}
 
 As discussed previously, container virtualization is not a recently developed technology. The origins of containerization could be traced back to the previous century. Despite being battle-tested, containers are often targeted by various cyber attacks, as shown by several studies. Jian and Chen describe two possible attacks that exploit Linux namespace vulnerabilities and memory handling to perform what is known as container escape attack \cite{acm:5}. Another vulnerability mentioned by Bélair et al. allows privilege escalation to the host after rewriting runc binary from a maliciously crafted container \cite{acm:6}.
@@ -337,6 +341,8 @@ As can be seen, the process of scanning and updating is similar to a race agains
 
 Overall, a comprehensive approach to container security requires a multi-layered defense. An administrator must address both insecure configurations in the environment and keep track of emerging vulnerabilities, starting from the host kernel and finishing with the containerized applications.
 
+
+\clearpage
 \subsection{Container escape}
 
 The container threat model cannot be reduced to a single vector of malicious processes escaping the container. As mentioned in \cite{ieee:1}, protection should be provided from the container to the host, to other containers, and vice versa. However, our particular interest lies in the case of a container escape, which can be considered as a violation of the core principles of containerization.
@@ -347,6 +353,7 @@ Container escape scenarios may occur due to software vulnerabilities, primarily 
 
 Another reason for container escapes is insecure configurations. As mentioned previously, running a container with the \texttt{--privileged} flag makes escaping trivial. Therefore, it is recommended not only to disable options that are considered risky, but also to harden the configuration in the event of an escape happening. Most importantly, this includes enabling user mapping (rootless mode) or setting user ID, so the process inside the container has limited privileges on the host system. For systems where running processes poses a high risk of escaping, it makes sense to strengthen container isolation and enforce additional security measures \cite{book:rice}.
 
+\clearpage
 \subsection{Security hardening}
 
 As can be understood from the above, container virtualization does not provide a perfect level of isolation. Due to the complex mechanisms involved, the entire system is prone to vulnerabilities and misconfigurations at every stage of the container lifecycle. In order to reduce the risk of compromising applications, the host or other containers, it is possible to utilize additional security measures provided by the Linux kernel, runtimes or third-party developers. In harsh environments, it may be reasonable to enhance protection even further by employing mixed, non-traditional forms of containerization.
