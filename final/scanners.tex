@@ -424,7 +424,10 @@ After calculating these metrics for each image, we can obtain the average result
 
 \subsection{Findings}
 
-As we previously mentioned, we have collected 1,183 of the most popular images, based on the number of times they were pulled. The top 15 images are displayed in Table \ref{tab:topimages}, and the distribution of images according to the number of pulls is shown in Figure \ref{img:imagespull}. The distribution of images per Linux distribution of the base layer is shown in Figure \ref{img:imagesdistro}.
+
+As we previously mentioned, we have collected 1,183 of the most popular images, based on the number of times they were pulled. The top 15 images are displayed in Table \ref{tab:topimages}, and the distribution of images according to the number of pulls is shown in Figure \ref{img:imagespull}. 
+
+The data showed that most of the evaluated images were built on Alpine Linux, a lightweight distribution that is well-suited for containers (438 images). In addition, 249 and 206 images were based on Debian and Ubuntu systems, respectively. This distribution is illustrated in Figure \ref{img:imagesdistro}.
 
 
 \begin{table}[h]
@@ -452,13 +455,15 @@ As we previously mentioned, we have collected 1,183 of the most popular images, 
     \label{tab:topimages}
 \end{table}
 
-\image{imagespull.pdf}{Images distribution by number of pulls}{img:imagespull}{0.7}
+\image{imagespull.png}{Images distribution by number of pulls}{img:imagespull}{0.7}
 
-\image{imagesdistro.pdf}{Images per Linux distribution}{img:imagesdistro}{0.7}
+\image{imagesdistro.png}{Images per Linux distribution}{img:imagesdistro}{0.7}
 
-For these images, we retrieved 3207 tags from Docker Hub. After scanning with the scanners, we successfully received results for 3191 of these tags. For each tag, we also obtained the date of the last update.
+For the set of approximately one thousand images, we retrieved 3,207 tags from Docker Hub. After submitting each tag for scanning, we successfully received results for 3,191 of these tags. Additionally, for each tag, we obtained the date of the latest update. As the data demonstrates, the majority of the images retrieved were updated recently. Indeed, the highest number of tags were updated in 2023 (741 tags) and the lowest in 2016 (only 72 tags), as can be seen in Figure \ref{img:tagsyear}.
 
+\image{tagsyear.png}{Tag year of update}{img:tagsyear}{0.7}
 
+Now we should proceed to obtained aggregated records to analyse the vulnerabilities of images. 
 
 
 % \FloatBarrier
