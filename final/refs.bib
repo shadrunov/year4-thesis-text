@@ -5,6 +5,16 @@
   url    = {{\url{https://www.aquasec.com/blog/a-brief-history-of-containers-from-1970s-chroot-to-docker-2016}. [Accessed: \today]}}
 }
 
+@article{a:recall,
+  title   = {Soft precision and recall},
+  journal = {Pattern Recognition Letters},
+  volume  = {167},
+  pages   = {115-121},
+  year    = {2023},
+  url     = {\url{https://doi.org/10.1016/j.patrec.2023.02.005}},
+  author  = {Pasi Fränti and Radu Mariescu-Istodor}
+}
+
 @article{acm:1,
   author     = {Randal, Allison},
   title      = {The Ideal Versus the Real: Revisiting the History of Virtual Machines and Containers},
@@ -197,14 +207,15 @@
   title  = {Docker Capabilities and no-new-privileges},
   note   = {\textit{raesene.github.io}, Jun. 1, 2019},
   url    = {{\url{https://raesene.github.io/blog/2019/06/01/docker-capabilities-and-no-new-privs}. [Accessed: \today]}}
-}
+} 
 
 @misc{b:terenceli,
   author = {Terenceli},
   title  = {runc internals, part 3: runc double clone},
   note   = {\textit{terenceli.github.io}, Dec. 28, 2021},
   url    = {{\url{https://terenceli.github.io/%E6%8A%80%E6%9C%AF/2021/12/28/runc-internals-3}. [Accessed: \today]}}
-} 
+}
+
 
 @book{book:docker,
   author    = {Miell, Ian and Sayers, Aidan},
@@ -213,7 +224,6 @@
   year      = {2019. Accessed: \today},
   url       = {\url{https://www.manning.com/books/docker-in-practice-second-edition}}
 }
-
 
 @article{book:kube,
   author  = {Weissman, Ben and Nocentino, Anthony E.},
@@ -230,6 +240,7 @@
   year      = {2020}
 }
 
+
 @inproceedings{c:1,
   author    = {Yang, Nan and Chen, Cen and Yuan, Tao and Wang, Yujie and Gu, Xiaofan and Yang, Dan},
   booktitle = {2022 International Conference on Cyber-Enabled Distributed Computing and Knowledge Discovery (CyberC)},
@@ -240,7 +251,6 @@
   pages     = {252-257},
   doi       = {10.1109/CyberC55534.2022.00049}
 }
-
 
 @inproceedings{c:10,
   author    = {Acharya, Ashijeet and Fanguède, Jérémy and Paolino, Michele and Raho, Daniel},
@@ -300,6 +310,32 @@
   pages     = {0975-0980},
   doi       = {10.1109/CCWC47524.2020.9031195},
   url       = {\url{https://ieeexplore.ieee.org/abstract/document/9031195}}
+}
+
+@inproceedings{c:16,
+  author    = {Liu, Peiyu and Ji, Shouling and Fu, Lirong and Lu, Kangjie and Zhang, Xuhong and Lee, Wei-Han and Lu, Tao and Chen, Wenzhi and Beyah, Raheem},
+  editor    = {Chen, Liqun and Li, Ninghui and Liang, Kaitai and Schneider, Steve},
+  title     = {Understanding the Security Risks of Docker Hub},
+  booktitle = {Computer Security — ESORICS 2020},
+  year      = {2020},
+  publisher = {Springer International Publishing},
+  address   = {Cham},
+  pages     = {257-276},
+  isbn      = {978-3-030-58951-6},
+  url       = {\url{https://doi.org/10.1007/978-3-030-58951-6\_13}}
+}
+
+@inproceedings{c:17,
+  author    = {Wist, Katrine and Helsem, Malene and Gligoroski, Danilo},
+  editor    = {Daimi, Kevin and Arabnia, Hamid R. and Deligiannidis, Leonidas and Hwang, Min-Shiang and Tinetti, Fernando G.},
+  title     = {Vulnerability Analysis of 2500 Docker Hub Images},
+  booktitle = {Advances in Security, Networks, and Internet of Things},
+  year      = {2021},
+  publisher = {Springer International Publishing},
+  address   = {Cham},
+  pages     = {307-327},
+  isbn      = {978-3-030-71017-0},
+  url       = {\url{https://doi.org/10.1007/978-3-030-71017-0\_22}}
 }
 
 @inproceedings{c:2,
@@ -462,18 +498,18 @@
   url    = {{\url{https://github.com/kubernetes/enhancements/blob/master/keps/sig-node/127-user-namespaces/README.md}. [Accessed: \today]}}
 }
 
-@misc{d:getting-started,
-  author = {},
-  title  = {Getting started with containerd},
-  note   = {\textit{github.com}, Feb. 28, 2024},
-  url    = {{\url{https://github.com/containerd/containerd/blob/main/docs/getting-started.md}. [Accessed: \today]}}
-}
-
 @misc{d:gcp,
   author = {},
   title  = {Container scanning overview},
   note   = {\textit{cloud.google.com}},
   url    = {{\url{https://cloud.google.com/artifact-analysis/docs/container-scanning-overview}. [Accessed: \today]}}
+}
+
+@misc{d:getting-started,
+  author = {},
+  title  = {Getting started with containerd},
+  note   = {\textit{github.com}, Feb. 28, 2024},
+  url    = {{\url{https://github.com/containerd/containerd/blob/main/docs/getting-started.md}. [Accessed: \today]}}
 }
 
 @misc{d:implementations,
@@ -609,6 +645,7 @@
   url    = {{\url{https://github.com/nabla-containers/runnc}. [Accessed: \today]}}
 }
 
+
 @misc{gh:snyk,
   author = {},
   title  = {snyk/cli},
@@ -637,7 +674,6 @@
   year    = {2022}
 }
 
-
 @article{j:2,
   author  = {Jorge Gomes and Emanuele Bagnaschi and Isabel Campos and Mario David and Luís Alves and João Martins and João Pina and Alvaro López-García and Pablo Orviz},
   title   = {Enabling rootless Linux Containers in multi-user environments: The udocker tool},
@@ -664,6 +700,7 @@
   url    = {{\url{https://man7.org/linux/man-pages/man7/cgroups.7.html}. [Accessed: \today]}}
 }
 
+
 @misc{m:crun,
   author = {},
   title  = {{crun(1) — General Commands Manual}},
@@ -684,7 +721,6 @@
   note   = {\textit{man7.org}, Jun. 16, 2022},
   url    = {{\url{https://man7.org/linux/man-pages/man7/lxc.7.html}. [Accessed: \today]}}
 }
-
 
 @misc{m:namespaces,
   author = {},

@@ -1,14 +1,20 @@
 \section{Vulnerability detection}
 \subsection{Previous studies}
 
-The researches upon the quality and effectiveness of vulnerabilities detection tools have already been attempted. One of the most compregensive works was published by Omar Javed and Salman Toor in 2021 \cite{arxiv:1}. The approach described in the paper was based on several open source scanners (namely, Clair, Anchore, and Microscanner). After inspecting 59 Docker images for Java-based applications, the authors calculate detection coverage and detection hit ratio metrics and conclude that the most accurate tool (Anchore) was omitting around 34\% of vulnerabilities. A major limitation of their work is a relatively small number of images used to evaluate the performance of scanning tools as well as the range of scanners examined.
+The researches upon the quality and effectiveness of vulnerabilities detection tools have already been attempted. One of the most comprehensive works was published by Omar Javed and Salman Toor in 2021 \cite{arxiv:1}. The approach described in the paper was based on several open source scanners (namely, Clair, Anchore, and Microscanner). After inspecting 59 Docker images for Java-based applications, the authors calculated detection coverage and detection hit ratio metrics and and concluded that the most accurate tool, Anchore, missed around 34\% of vulnerabilities. The metric used in this study, detection coverage, is in fact a well-known metric in data analysis usually referred to as recall. However, a major limitation of their work is the small number of images used to evaluate scanning tool performance. Additionally, the limited range of scanners examined and the reliance on a single metric for evaluating quality are also limitations.
+
+Another study conducted by Liu et al. revealed the concerning state of image security on Docker Hub \cite{c:16}. The researchers analysed more than 2 million public images examining them for sensitive and potentially insecure parameters as well as malicious software and vulnerabilities. To detect malware, they used VirusTotal, and vulnerabilities were discovered using Anchore scanner. As a result, the researchers were able to detect several malicious images and discovered that vulnerability patching is often delayed, taking an average of about half a year for software developers to fix breaches. Despite its insightful revelations, this work relies solely on a single tool for static analysis.
+
+In 2021, another vulnerability analysis of Docker Hub images was presented by Wist and her colleagues \cite{c:17}. In this study, 2500 images were analyzed, which helped to reveal several interesting findings. The number of vulnerabilities in recent Docker Hub images has been on the rise compared to images published earlier. The authors investigated the susceptibility of four categories of Docker Hub images: verified, certified, official, and community. It was found that certified images were more vulnerable, while official images appeared to be less so. Finally, no clear correlation could be found between the number of vulnerabilities and other image features, such as the number of downloads or the last update date. In this paper, the only used tool was Anchore Engine.
 
 Another paper by K. Brady et al. described the CI/CD pipeline which combined static and dynamic analysers \cite{c:2}. A set of 7 images was submitted to Clair and Anchore scanners and original dynamic scanner based on Docker-in-Docker approach. The results clearly show the importance of dynamic detection method, however, no direct comparison of Clair and Anchore was conducted. Similar research was conducted in 2021, however, a pair of SonarQube and VirusTotal was used \cite{c:3}.
 
 Massive research was conducted in 2020 by security company Prevasio. As the report states, all 4 million of public images from Docker Hub were scanned with static analyser (Trivy) and dynamic analyser, and more than half of all images were discovered to have critical vulnerabilities \cite{report:dynamic}. Significant number of images were containing dynamically downloaded payload, cryptominers and other malicious software.
 
+Upon the review of the literature on static analysis of containerized applications, we can conclude that most experiments either do not focus on comparing the performance of existing scanning tools or have a limited number of images or scanners examined. In the following sections, we describe our experiment, which addresses these limitations.
+
 \clearpage
-\subsection{Static analysers}
+\subsection{Static analysis}
 
 Vulnerability scanners are special tools that identify known software vulnerabilities inside containers. Two approaches to this issue are known. First, it is possible to analyse versions of all the software in container image and check its safety. This approach is called static analysis, as it does not require any container to run, which speads up the process. However, static analysis has significant limitations, because the vulnerability databases take time to include recently discovered vulnerabilities, and container must not download any other packages besides what is included in the image. Finally, malicious but not yet reported packages cannot be discovered by static analysers. Nevertheless, this technology is extensively used in CI/CD pipelines to minimize risks of attack and container compromisation.
 
@@ -119,7 +125,7 @@ Otherwise, Docker Scout supports integrations with several third-party systems, 
 As a data source, Docker Scout aggregates vulnerability information from various sources, including Linux distribution advisories, language-specific databases, GitHub and GitLab advisory systems as well as the National Vulnerability Database \cite{d:scoutdb}. Unlike other scanner tools, Docker Scout utilizes Package URLs (PURLs) rather than the Common Product Enumeration (CPE) system, which, according to its developers, significantly reduces the likelihood of false positive results.
 
 \image{scout.png}{Docker Scout dashboard}{img:scout}{1}
-\FloatBarrier
+% \FloatBarrier
 
 For the purposes of our evaluation, we primarily focus on the \texttt{docker scout cves} command, which generates a vulnerability report for a selected image. This command is not limited to images, but can also be used for OCI bundles and local files. The tool's output can be generated in plain text, SARIF or SBOM (Software Bill of Materials) formats. The SERIF-formatted report is compatible with other tools.
 
@@ -195,7 +201,7 @@ Static analysis provided by Google is an integral part of its registry. Therefor
 
 
 \image{gar.png}{Google Artifact Registry}{img:gar}{1}
-\FloatBarrier
+% \FloatBarrier
 
 After the initial analysis, the registry will continue to update the image evaluation as new information becomes available from vulnerability sources every day. Google gathers information from Linux distributions advisories and the GitHub Advisory Database for language packages.
 
@@ -230,13 +236,13 @@ After discussing the various scanning solutions available on the market and thei
 \clearpage
 \subsection{Methodology}
 
-The process of data acquisition and the following analysis for this part of research could be divided into several stages Firstly, a set of container images and tags for scanning was composed. For this purpose Docker Hub API were employed. Then, each image was submitted to each scanning tool and vulnerability report was stored on disk in JSON format. After scanning, reports were combined and number of vulnerabilities for each image was calculated. Based on this calculations the metrics of detection quality were aggregated for each scanning tool.
+The process of data collection and analysis for this research project can be divided into several stages. First, a set of container images and tags were created for scanning. For this purpose, the Docker Hub API was used. Then, each image was submitted to a scanning tool, and the vulnerability report was saved in JSON format on the disk. After scanning, the reports were combined, and the number of vulnerabilities in each image was calculated. Based on these calculations, metrics for the detection quality of each scanner were calculated.
 
 \subsubsection{Images selection}
 
 To select the most popular (according to the number of pulls) images from Docker Hub, the following algorithm was developed.
 
-At first, we composed a list of search queries. The list consists of combinations of two latin letters starting from \texttt{aa} and finishing with \texttt{zz}. Each of $26 \cdot 26 = 676$ combinations was then used to query the list of corresponding images from Docker Hub, as shown in Listing \ref{lst:images}. The result was then saved to the JSON file.
+At first, we composed a list of search queries. The list consists of all combinations of two latin letters starting from \texttt{aa} and finishing with \texttt{zz}. Each of $26 \cdot 26 = 676$ combinations was then used to query the list of corresponding images from Docker Hub, as shown in Listing \ref{lst:images}. The result was then saved to the JSON file.
 \begin{listing}[htp]
     \centering
     \begin{minipage}{0.8\linewidth}
@@ -260,13 +266,13 @@ return data["summaries"]
     \label{lst:images}
 \end{listing}
 
-The next step is to combine search results from each query and sample a reasonably sized subset of the most popular images. We parse each JSON file and drop duplicating images. After all, the set of 3694651 images is sorted by \texttt{popularity} parameter and 0.999 percentile is selected. The resulting 3695 images are saved for further processing.
+The next step is to combine search results from each query and sample a reasonably sized subset of the most popular images. We parse each JSON file and drop duplicating images. After all, the set of 3694651 images is sorted by \texttt{popularity} parameter and approximately 1200 images were selected from the top of the list and saved for further processing.
 
 \subsubsection{Tags selection}
 
 Each image exists in multiple versions which are referred to as image tags. We have to select a number of tags for each image to scan. Tags could also be built for a specific architecture and OS platform. We are primarily interested in \texttt{amd64} and \texttt{Linux} tags. 
 
-The request used for generating the list of tags for each image is demonstrated in Listing \ref{lst:tags}. We randomly select 10 tags for each image that satisfy mentioned requirements. As the result, the set of approximately 30000 tags is composed and stored in file.
+The request used for generating the list of tags for each image is demonstrated in Listing \ref{lst:tags}. We randomly select 3 tags for each image that satisfies the mentioned requirements. As the result, the set of approximately 3200 tags is composed and stored in file.
 
 \begin{listing}[htp]
     \centering
@@ -279,7 +285,7 @@ res = res.json()
 up = res["count"]
 iteration = 0
 total = 0
-while total < 10 and iteration < 100:
+while total < 3 and iteration < 100:
     page_num = random.randint(1, up)
     response = requests.get(link, params={"page": page_num, "page_size": 1})
     tag = response.json()["results"][0]
@@ -295,30 +301,172 @@ while total < 10 and iteration < 100:
 
 \subsubsection{Scan images}
 
-Next steps were performed on a virtual machine with 16 vCPU and 32 Gb RAM. As a rule, each scanning tool must be installed on the machine, and then each image tag is passed to the tool with command line client.
-
-\subsubsection*{Clair}
-
-
-
-
-\subsubsection*{Scout}
-
-
-
-
-
-\subsubsection*{Trivy} 
-
-
-
+This step was performed on a virtual machine with 16 virtual CPU cores and 32 GB of RAM. As a general rule, each scanning tool must be installed on the machine before each image is passed to the tool using a command line interface. The installation process was already mentioned in the previous section.
 
 \subsubsection{Analysis of obtained scan reports}
 
 After submitting the set of images to each of scanning tool, the reports must undergo the further analysis to determine the effectiveness of the studied software. As the results are presented in JSON format, python libraries such as \texttt{json} and \texttt{pandas} provide us with enough features to calculate the desired quality metrics. 
 
+\subsubsection*{Data preparation}
+
+As each scanner produces results in a different format, the data needs to be prepared and combined for further analysis. First, we identified a list of tags that were reported by all the scanning tools. Then, 16 of these tags were excluded, leaving a total of 3191 scanned tags.
+
+Then, each result from the scanner was reduced to the necessary information, creating a scan record. Each record is marked with \texttt{"uid"} field. The main issue is the need to identify vulnerabilities reported in the current entry. Therefore, we scan the report and try to find the mentioned CVE ID or ID of a GitHub Security Advisory or Red Hat Security Advisory. Next, the severity category is extracted using the CVSS v3 scoring scale (None, Low, Medium, High, Critical) or another similar categorical system. Additionally, the package that contains the reported vulnerability is saved, along with the base layer distribution of the image. Finally, if such information is available, we obtain data about the available fixes. The exact steps for correctly processing the data from each scanner depend on the scanning report format. The example of scan record is provided in Listing \ref{lst:scanrecord}.
+
+
+\begin{listing}[htp]
+    \centering
+    \begin{minipage}{0.7\linewidth}
+        \begin{minted}[linenos=false, tabsize=4]{json}
+{
+    "id": "CVE-2023-20883",
+    "cve_id": "CVE-2023-20883",
+    "sas": [
+        "GHSA-xf96-w227-r7c4",
+        "CVE-2023-20883"
+    ],
+    "severity": "high",
+    "package": "spring-boot-autoconfigure",
+    "distro": [
+        "alpine",
+        "3.17.3"
+    ],
+    "fixed": true,
+    "uid": "grype77"
+}
+        \end{minted}
+    \end{minipage}
+    \caption{Format of scan record}
+    \label{lst:scanrecord}
+\end{listing}
+
+\subsubsection*{Data merging}
+
+The next task is to match the records from each tool. The obtained data demonstrated, that in case of certain scanners (namely, Clair) several records may point to the same vulnerability. The difference is only the reported packages, which in fact could be the chain of dependencies and be in fact the same place of the system. Such occurrences should be merged together. Then, using field \texttt{"sas"} which contains all the identificators of vulnerability found in a specific record, record from different scanners should be compared and linked in case they are equivalent. The process of linking is demonstrated in Figure \ref{} \#TODO figure. After all, we combine the set of aggregated records, where each record holds pointers to scan records of every scanning tool. The example is given in Listing \ref{lst:aggrrecord}.
+
+
+\begin{listing}[htp]
+    \centering
+    \begin{minipage}{0.7\linewidth}
+        \begin{minted}[linenos=false, tabsize=4]{json}
+{
+    "uid": "aggr10",
+    "links": {
+        "clair": ["clair10"],
+        "gc": ["gc16"],
+        "grype": ["grype67", "grype91"],
+        "scout": ["scout16", "scout54", "scout55"],
+        "snyk": ["snyk13", "snyk31", "snyk38"],
+        "trivy": ["trivy44", "trivy57"]
+    },
+    "conf": {
+        "clair": true,
+        "gc": true,
+        "grype": true,
+        "scout": true,
+        "snyk": true,
+        "trivy": true
+    },
+    "conf_count": 6,
+    "conf_count_others": 5,
+    "conf_rate": 1.0
+}
+        \end{minted}
+    \end{minipage}
+    \caption{Format of aggregated record}
+    \label{lst:aggrrecord}
+\end{listing}
+
+After forming aggregated records, we need to determine if the vulnerability described in a record was detected by more than one scanner. We assume that the more tools detect a particular vulnerability, the more likely it is that it actually exists, and we can consider this report as the truth. For example, the record in Listing \ref{lst:aggrrecord} contains the vulnerability that has been reported by every scanning tool. We mark the existence of the report as \texttt{True} in the \texttt{"conf"} section. Next, we calculate the number of reports, which in this case equals to 6. Since at least one scanner must have reported a vulnerability in order to create an aggregated record, we can obtain the number of other scanners ``confirming'' the reliability of the report by subtracting 1 from the total number of confirmations. Lastly, the confirmation rate is calculated by dividing the number of other scanners that confirm the record by the total number of other scanners. In this example, 5 out of the 5 other scanners have validated the record, giving a confirmation rate of 1.0.
+
+
+\subsubsection*{Data validation}
+
+Firstly, each reported record from the scanner can be assigned to a category based on its validation by other scanners. The record falls into one of the following four categories:
+
+\begin{itemize}
+    \item \textbf{True Positive (TP)} — a record is TP if reported by a scanner and confirmed by other scanners. This is the correct result (actually present vulnerability) that the scanner has successfully identified.
+    \item \textbf{False Positive (FP)} — a record is FP if reported by a scanner and not confirmed by other scanners. This is an incorrect result that was mistakenly produced by the scanner.
+    \item \textbf{True Negative (TN)} — a record is TN if not reported by a scanner and confirmed by other scanners. This is an existing vulnerability that should have been identified and reported by the scanner, but was missed.
+    \item \textbf{False Negative (FN)} — a record is FN if not reported by a scanner and not confirmed by other scanners. This is a correct result (non-existing vulnerability), which the scanner did not report and should not have reported.
+\end{itemize}
+
+In addition, we must also introduce the measure of sensitivity - the minimum number of other tools required to confirm the existence of a record. In the following analysis, we will use the minimum number of other scanners equal to 1 and 2.
+
+So, now we can create a list of true positives, false positives, true negatives, and false negatives for each scanner. To do this, we compare the number of confirmations with the minimum requirement and see if the scanner detected this vulnerability. For example, if the number of confirmations is 4 out of 5, and the current scanner confirmed it as well, then it is a true positive. If the current scanner missed the vulnerability, it would be a false negative. If the vulnerability was confirmed by only one scanner, and that scanner is actually the one being evaluated, then it would be false positive. Otherwise, it would be true negative. This way, each scanner report is validated by other scanners.
+
 \subsubsection*{Quality metrics}
 
-https://habr.com/ru/articles/661119/
+Based on the classification of reports into the four categories described, it is possible to calculate metrics of accuracy for each scanner. In our work, we will use three well-known metrics from data analysis. First, we rely on precision and recall. Precision and recall are two of the most commonly used metrics to evaluate the performance of recognition tasks. They provide scores that are expressed as fractions \cite{a:recall}.
 
-\url{https://en.wikipedia.org/wiki/Precision_and_recall}
+Precision is the number of correct results (true positives) relative to the number of all results. It described how many retrieved elements are relevant, or, in our case, how many reported vulnerabilities are actually present.
+
+\begin{align*}
+    Precision \ = \ \frac{Relevant \ retrieved \ elements}{All \ retrieved \ elements} \ = \ \frac{TP}{TP + FP}
+\end{align*}
+
+
+Recall is the number of correct results relative to the number of expected results. It described how many relevant elements were retrieved, or how many of existing vulnerabilities were reported by the scanner.
+
+\begin{align*}
+    Recall \ = \ \frac{Relevant \ retrieved \ elements}{All \ relevant \ elements} \ = \ \frac{TP}{TP + FN}
+\end{align*}
+
+It is also known that these metrics are not independent. For example, as a general rule, the higher the precision of a tool, the lower the recall it exhibits. In other words, if a tool guesses all the relevant elements, it will miss some other relevant ones. Conversely, if a tool detects all existing elements, it may also detect some non-relevant ones. We will observe this pattern in our findings.
+
+As we understand the specifics of both precision and recall and how they characterise the evaluated tools, it is hard to compare tools based on two values. The performance can be unified into a single value called $F_1$ score. $F_1$ score is defined as the harmonic mean of precision and recall:
+
+\begin{align*}
+    F_1 \ = \ 2 \cdot \frac{Precision \cdot Recall}{Precision + Recall}
+\end{align*}
+
+After calculating these metrics for each image, we can obtain the average results for each tool. The results of the evaluation will be discussed in the next section.
+
+\subsection{Findings}
+
+As we previously mentioned, we have collected 1,183 of the most popular images, based on the number of times they were pulled. The top 15 images are displayed in Table \ref{tab:topimages}, and the distribution of images according to the number of pulls is shown in Figure \ref{img:imagespull}. The distribution of images per Linux distribution of the base layer is shown in Figure \ref{img:imagesdistro}.
+
+
+\begin{table}[h]
+    \centering
+    \begin{tabular}{| p{0.02\linewidth} | p{0.3\linewidth} | p{0.5\linewidth} | p{0.08\linewidth} |}
+        \hline
+        \centering \textbf{}     & \centering \textbf{Image}              & \centering \textbf{Description}                                    & \centering\arraybackslash \textbf{Pulls} \\ \hline
+        1  & \texttt{stakater/reloader}     &                                                                                                 & 10B+  \\ \hline
+        2  & \texttt{fluent/fluent-bit}     & Fluent Bit, lightweight logs and metrics collector and forwarder                                & 10B+  \\ \hline
+        3  & \texttt{istio/pilot}           & Istiod (formerly known as Pilot)                                                                & 10B+  \\ \hline
+        4  & \texttt{istio/proxyv2}         & Istio proxy                                                                                     & 10B+  \\ \hline
+        5  & \texttt{datadog/agent}         & Docker container for the new Datadog Agent                                                      & 10B+  \\ \hline
+        6  & \texttt{containrrr/watchtower} & A process for automating Docker container base image updates.                                   & 1B+   \\ \hline
+        7  & \texttt{curlimages/curl}       & official docker image for curl - command line tool and library  for transferring data with URLs & 1B+   \\ \hline
+        8  & \texttt{istio/operator}        & Istio in-cluster operator                                                                       & 1B+   \\ \hline
+        9  & \texttt{envoyproxy/envoy}      & Cloud-native high-performance edge/middle/service proxy                                         & 1B+   \\ \hline
+        10 & \texttt{jenkins/jenkins}       & The leading open source automation server                                                       & 1B+   \\ \hline
+        11 & \texttt{grafana/grafana}       & The official Grafana docker container                                                           & 1B+   \\ \hline
+        12 & \texttt{bitnami/postgresql}    & Bitnami PostgreSQL Docker Image                                                                 & 1B+   \\ \hline
+        13 & \texttt{timberio/vector}       & A High-Performance Logs, Metrics, and Events Router                                             & 1B+   \\ \hline
+        14 & \texttt{bitnami/kubectl}       & Bitnami Docker Image for Kubectl                                                                & 1B+   \\ \hline
+        15 & \texttt{prom/node-exporter}    & prom/node-exporter                                                                              & 1B+   \\ \hline
+    \end{tabular}
+    \caption{Top pulled images}
+    \label{tab:topimages}
+\end{table}
+
+\image{imagespull.pdf}{Images distribution by number of pulls}{img:imagespull}{0.7}
+
+\image{imagesdistro.pdf}{Images per Linux distribution}{img:imagesdistro}{0.7}
+
+For these images, we retrieved 3207 tags from Docker Hub. After scanning with the scanners, we successfully received results for 3191 of these tags. For each tag, we also obtained the date of the last update.
+
+
+
+
+% \FloatBarrier
+
+
+% cvssV3_severity
+
+% предложить мол что выбирать какую ошибку. если уязвимость критическая лучше её передетектить. если уязвимость не критическая то лучше недо детектить чтобы снизить нагрузку на проверку руками и патчи и работу людей
+
+Both precision and recall may be useful in cases where there is imbalanced data. However, it may be valuable to prioritize one over the other in cases where the outcome of a false positive or false negative is costly. For example, in medical diagnosis, a false positive test can lead to unnecessary treatment and expenses. In this situation, it is useful to value precision over recall. In other cases, the cost of a false negative is high. For instance, the cost of a false negative in fraud detection is high, as failing to detect a fraudulent transaction can result in significant financial loss
+
