@@ -1,7 +1,7 @@
 \section{Vulnerability detection}
 \subsection{Previous studies}
 
-The researches upon the quality and effectiveness of vulnerabilities detection tools have already been attempted. One of the most comprehensive works was published by Omar Javed and Salman Toor in 2021 \cite{arxiv:1}. The approach described in the paper was based on several open source scanners (namely, Clair, Anchore, and Microscanner). After inspecting 59 Docker images for Java-based applications, the authors calculated detection coverage and detection hit ratio metrics and and concluded that the most accurate tool, Anchore, missed around 34\% of vulnerabilities. The metric used in this study, detection coverage, is in fact a well-known metric in data analysis usually referred to as recall. However, a major limitation of their work is the small number of images used to evaluate scanning tool performance. Additionally, the limited range of scanners examined and the reliance on a single metric for evaluating quality are also limitations.
+The research on the quality and effectiveness of vulnerability detection tools has already been attempted. One of the most comprehensive works was published by Omar Javed and Salman Toor in 2021 \cite{arxiv:1}. The approach described in the paper was based on several open source scanners (namely, Clair, Anchore, and Microscanner). After inspecting 59 Docker images for Java-based applications, the authors calculated detection coverage and detection hit ratio metrics and and concluded that the most accurate tool, Anchore, missed around 34\% of vulnerabilities. The metric used in this study, detection coverage, is in fact a well-known metric in data analysis usually referred to as recall. However, a major limitation of their work is the small number of images used to evaluate scanning tool performance. Additionally, the limited range of scanners examined and the reliance on a single metric for evaluating quality are also limitations.
 
 Another study conducted by Liu et al. revealed the concerning state of image security on Docker Hub \cite{c:16}. The researchers analysed more than 2 million public images examining them for sensitive and potentially insecure parameters as well as malicious software and vulnerabilities. To detect malware, they used VirusTotal, and vulnerabilities were discovered using Anchore scanner. As a result, the researchers were able to detect several malicious images and discovered that vulnerability patching is often delayed, taking an average of about half a year for software developers to fix breaches. Despite its insightful revelations, this work relies solely on a single tool for static analysis.
 
@@ -20,7 +20,7 @@ Vulnerability scanners are special tools that identify known software vulnerabil
 
 The opposite way to detect vulnerabilities in containers is to observe its runtime behaviour. Tools implementing this idea are called dynamic analysers. They may gather data about running processes, network and disk usage and discover suspicious activity patterns such as requests to C2 servers or compiling executables. This approach can effectively detect malicious images in the cases when static scanners are powerless. However, they require extensive resources and time usage, as each scan takes tens of seconds to complete, and may be unpredictable in special cases, when malicious applications disguise themselves and imitate normal behaviour unless started in the production environment. Further discussion will be held about static analysers.
 
-The process of image attestation with static analyser may be described as following. First, the scanner compiles the list of all installed packages and libraries inside the image along with their versions. Next, each package is checked upon publically available vulnreability databases and marked as vulnerable or safe to use. This explains why various mistakes could easily occur during the detection process, or why reports from different scanners are not identical. Each scanner gets vulnerability information from various sources including per-distribution security advisories (Ubuntu Oval database, Debian Security Tracker, RHEL Oval database, to name but a few) or general vulnerability databases such as NVD (National Vulnerability Database). The information in these sources are of various degrees of relevance. Special treatment must be provided to the vulnerabilities that will not be fixed due to its negligibility. Finally, names of the packages may vary between distributions. All these reasons lead to false negative results, when a vulnerable package is marked as save. On the contrary, some packages are organised in groups, and incorrect treatment of the whole group because of one package can probably cause false positive results. Overall, the scanning report shoud be carefully considered in each individual case \cite{book:rice}.
+The process of image attestation with static analyser may be described as following. First, the scanner compiles the list of all installed packages and libraries inside the image along with their versions. Next, each package is checked upon publically available vulnreability databases and marked as vulnerable or safe to use. This explains why various mistakes could easily occur during the detection process, or why reports from different scanners are not identical. Each scanner gets vulnerability information from various sources including per-distribution security advisories (Ubuntu Oval database, Debian Security Tracker, RHEL Oval database) or general vulnerability databases such as NVD. The information in these sources are of various degrees of relevance. Special treatment must be provided to vulnerabilities that will not be fixed due to its negligibility. Finally, package names may vary between distributions. All these reasons lead to false negative results, when a vulnerable package is marked as save. On the contrary, some packages are organised in groups, and incorrect treatment of the whole group because of one package can probably cause false positive results. Overall, the scanning report shoud be carefully considered in individually \cite{book:rice}.
 
 \clearpage
 \subsection{Existing tools}
@@ -205,7 +205,7 @@ Static analysis provided by Google is an integral part of its registry. Therefor
 
 After the initial analysis, the registry will continue to update the image evaluation as new information becomes available from vulnerability sources every day. Google gathers information from Linux distributions advisories and the GitHub Advisory Database for language packages.
 
-For convenience, the report can be retrieved using the CLI tool called \texttt{gcloud}. To obtain scan results for a set of Docker Hub images, we have implemented the following process. Firstly, we set up Artifact Registry as a proxy for Docker Hub, which means it downloads and caches images in the registry upon user request to Docker Hub. When an image is processed through the registry, it is scanned and a report is generated and saved in the cloud. Meanwhile, to release disk space, the image is deleted from the local machine as it is no longer needed. After a while, the second iteration is performed to query the results of the image evaluation using the \texttt{gcloud} tool. The entire process is illustrated in Figure \#TODO add figure, and the necessary commands are given in Listing \ref{lst:gcloud}.
+For convenience, the report can be retrieved using the CLI tool called \texttt{gcloud}. To obtain scan results for a set of Docker Hub images, we have implemented the following process. Firstly, we set up Artifact Registry as a proxy for Docker Hub, which means it downloads and caches images in the registry upon user request to Docker Hub. When an image is processed through the registry, it is scanned and a report is generated and saved in the cloud. Meanwhile, to release disk space, the image is deleted from the local machine as it is no longer needed. After a while, the second iteration is performed to query the results of the image evaluation using the \texttt{gcloud} tool. The necessary commands are given in Listing \ref{lst:gcloud}.
 
 \begin{listing}[htp]
     \centering
@@ -234,15 +234,16 @@ After discussing the various scanning solutions available on the market and thei
 
 
 \clearpage
+
 \subsection{Methodology}
 
 The process of data collection and analysis for this research project can be divided into several stages. First, a set of container images and tags were created for scanning. For this purpose, the Docker Hub API was used. Then, each image was submitted to a scanning tool, and the vulnerability report was saved in JSON format on the disk. After scanning, the reports were combined, and the number of vulnerabilities in each image was calculated. Based on these calculations, metrics for the detection quality of each scanner were calculated.
 
 \subsubsection{Images selection}
 
-To select the most popular (according to the number of pulls) images from Docker Hub, the following algorithm was developed.
+To select the most popular images from Docker Hub according to the number of pulls, the following algorithm was developed.
 
-At first, we composed a list of search queries. The list consists of all combinations of two latin letters starting from \texttt{aa} and finishing with \texttt{zz}. Each of $26 \cdot 26 = 676$ combinations was then used to query the list of corresponding images from Docker Hub, as shown in Listing \ref{lst:images}. The result was then saved to the JSON file.
+First, First, we compiled a list of search queries consisting of all possible combinations of two Latin letters starting from \texttt{aa} and finishing with \texttt{zz}. Each of the $26 \cdot 26 = 676$ combinations was then used to query the list of corresponding images from Docker Hub, as shown in Listing \ref{lst:images}. The result was then saved to the JSON file.
 \begin{listing}[htp]
     \centering
     \begin{minipage}{0.8\linewidth}
@@ -266,7 +267,7 @@ return data["summaries"]
     \label{lst:images}
 \end{listing}
 
-The next step is to combine search results from each query and sample a reasonably sized subset of the most popular images. We parse each JSON file and drop duplicating images. After all, the set of 3694651 images is sorted by \texttt{popularity} parameter and approximately 1200 images were selected from the top of the list and saved for further processing.
+The next step is to combine the search results from each query and sample a reasonably sized subset of the most popular images. We parse each JSON file and remove duplicate images. After all, the set of 3694651 images is sorted by \texttt{popularity} parameter and approximately 1200 images are selected from the top of the list and saved for further processing.
 
 \subsubsection{Tags selection}
 
@@ -305,7 +306,7 @@ This step was performed on a virtual machine with 16 virtual CPU cores and 32 GB
 
 \subsubsection{Analysis of obtained scan reports}
 
-After submitting the set of images to each of scanning tool, the reports must undergo the further analysis to determine the effectiveness of the studied software. As the results are presented in JSON format, python libraries such as \texttt{json} and \texttt{pandas} provide us with enough features to calculate the desired quality metrics. 
+After submitting the set of images to each of the scanning tool, the reports must undergo the further analysis to determine the effectiveness of the studied software. As the results are presented in JSON format, python libraries such as \texttt{json} and \texttt{pandas} provide us with enough features to calculate the desired quality metrics. 
 
 \subsubsection*{Data preparation}
 
@@ -342,7 +343,7 @@ Then, each result from the scanner was reduced to the necessary information, cre
 
 \subsubsection*{Data merging}
 
-The next task is to match the records from each tool. The obtained data demonstrated, that in case of certain scanners (namely, Clair) several records may point to the same vulnerability. The difference is only the reported packages, which in fact could be the chain of dependencies and be in fact the same place of the system. Such occurrences should be merged together. Then, using field \texttt{"sas"} which contains all the identificators of vulnerability found in a specific record, record from different scanners should be compared and linked in case they are equivalent. The process of linking is demonstrated in Figure \ref{} \#TODO figure. After all, we combine the set of aggregated records, where each record holds pointers to scan records of every scanning tool. The example is given in Listing \ref{lst:aggrrecord}.
+The next task is to match the records from each tool. The obtained data demonstrated, that in case of certain scanners (namely, Clair) several records may point to the same vulnerability. The difference is only the reported packages, which in fact could be the chain of dependencies and be in fact the same place of the system. Such occurrences should be merged together. Then, using field \texttt{"sas"} which contains all the identificators of vulnerability found in a specific record, record from different scanners should be compared and linked in case they are equivalent. After all, we combine the set of aggregated records, where each record holds pointers to the corresponding scan records of every scanning tool. The example is given in Listing \ref{lst:aggrrecord}.
 
 
 \begin{listing}[htp]
@@ -422,15 +423,21 @@ As we understand the specifics of both precision and recall and how they charact
 
 After calculating these metrics for each image, we can obtain the average results for each tool. The results of the evaluation will be discussed in the next section.
 
+\FloatBarrier
+\clearpage
+
 \subsection{Findings}
 
+In this section, we will discuss the results of the analysis of the data obtained from the scanners. The Python notebooks created for this purpose can be found on GitHub: \url{https://github.com/shadrunov/year-4-thesis}.
 
-As we previously mentioned, we have collected 1,183 of the most popular images, based on the number of times they were pulled. The top 15 images are displayed in Table \ref{tab:topimages}, and the distribution of images according to the number of pulls is shown in Figure \ref{img:imagespull}. 
+\subsubsection{Exploring the data}
 
-The data showed that most of the evaluated images were built on Alpine Linux, a lightweight distribution that is well-suited for containers (438 images). In addition, 249 and 206 images were based on Debian and Ubuntu systems, respectively. This distribution is illustrated in Figure \ref{img:imagesdistro}.
+As we previously mentioned, we have collected 1183 of the most popular images, based on the number of times they were pulled. The top 15 images are displayed in Table \ref{tab:topimages}, and the distribution of images according to the number of pulls is shown in Figure \ref{img:imagespull}. 
+
+The data showed that most of the evaluated images were built on top of Alpine Linux, a lightweight distribution well-suited for containers (438 images). In addition, 249 and 206 images were based on Debian and Ubuntu systems, respectively. This distribution is illustrated in Figure \ref{img:imagesdistro}.
 
 
-\begin{table}[h]
+\begin{table}[hbt]
     \centering
     \begin{tabular}{| p{0.02\linewidth} | p{0.3\linewidth} | p{0.5\linewidth} | p{0.08\linewidth} |}
         \hline
@@ -451,27 +458,281 @@ The data showed that most of the evaluated images were built on Alpine Linux, a 
         14 & \texttt{bitnami/kubectl}       & Bitnami Docker Image for Kubectl                                                                & 1B+   \\ \hline
         15 & \texttt{prom/node-exporter}    & prom/node-exporter                                                                              & 1B+   \\ \hline
     \end{tabular}
-    \caption{Top pulled images}
+    \caption{Most pulled images}
     \label{tab:topimages}
 \end{table}
 
-\image{imagespull.png}{Images distribution by number of pulls}{img:imagespull}{0.7}
 
-\image{imagesdistro.png}{Images per Linux distribution}{img:imagesdistro}{0.7}
+For the set of approximately one thousand images, we retrieved 3207 tags from Docker Hub. After submitting each tag for scanning, we successfully received results for 3191 of these tags. Additionally, for each tag, we obtained the date of the latest update. As the data demonstrates, the majority of the images retrieved were updated recently. Indeed, the highest number of tags were updated in 2023 (741 tags) and the lowest in 2016 (only 72 tags), as can be seen in Figure \ref{img:tagsyear}. This signifies that the majority of images from our dataset received updates in recent years.
 
-For the set of approximately one thousand images, we retrieved 3,207 tags from Docker Hub. After submitting each tag for scanning, we successfully received results for 3,191 of these tags. Additionally, for each tag, we obtained the date of the latest update. As the data demonstrates, the majority of the images retrieved were updated recently. Indeed, the highest number of tags were updated in 2023 (741 tags) and the lowest in 2016 (only 72 tags), as can be seen in Figure \ref{img:tagsyear}.
+\image{imagespull.png}{Images distribution by the number of pulls}{img:imagespull}{0.5}
 
-\image{tagsyear.png}{Tag year of update}{img:tagsyear}{0.7}
+\image{imagesdistro.png}{Images per Linux distribution}{img:imagesdistro}{0.53}
 
-Now we should proceed to obtained aggregated records to analyse the vulnerabilities of images. 
+\image{tagsyear.png}{Number of images per the year of last update}{img:tagsyear}{0.53}
+
+\FloatBarrier
+\clearpage
+
+\subsubsection*{Examined Vulnerabilities}
+
+Now, we should move on to the aggregated records we have obtained to analyze the vulnerabilities contained in each image.
+
+After preparing the data, approximately 700,000 entries with vulnerabilities were obtained. Each entry describes a specific vulnerability in a package in a particular image. In total, nearly 15,000 unique vulnerabilities were identified. The most common vulnerabilities among the evaluated images are listed in Table \ref{tab:freqcve}. It can be observed that six of the most prevalent vulnerabilities are related to security breaches in the OpenSSL package, which was discovered in 2023. This indicates that the OpenSSL package is included in the base package of operating systems and its vulnerable version is present in up to half of all evaluated images.
 
 
-% \FloatBarrier
+\begin{table}[hbt]
+    \centering
+    \begin{tabular}{| p{0.2\linewidth} | p{0.4\linewidth} | p{0.1\linewidth} | p{0.1\linewidth} | p{0.08\linewidth} |}
+        \hline
+        \centering \textbf{CVE} & \centering \textbf{Description} & \centering \textbf{CVSS} & \centering \textbf{Package} & \centering\arraybackslash \textbf{Tags} \\ \hline 
+        CVE-2024-0727 & OpenSSL vulnerability; a remote intruder can crash an application with a specially crafted PKCS12 file & Medium & openssl & 1487 \\ \hline
+        CVE-2023-44487 & HTTP/2 protocol that allows attackers to crash servers by rapidly resetting many connections & High & nghttp & 1440 \\ \hline
+        CVE-2023-5678 & OpenSSL vulnerability leading to DoS attacks by providing specially crafted X9.42 DH-keys & Medium & openssl & 1398 \\ \hline
+        CVE-2023-3446 & OpenSSL vulnerability leading to DoS attacks by providing excessively long DH-keys & Medium & openssl & 1341 \\ \hline
+        CVE-2023-3817 & OpenSSL vulnerability leading to DoS attacks by making the process of checking DH keys very slow & Medium & openssl & 1260 \\ \hline
+        CVE-2024-2961 & Overflow vulnerability in older versions of glibc when working with Chinese encodings & None & glibc & 1238 \\ \hline
+        CVE-2023-2650 & OpenSSL vulnerability leading to DoS attacks by slowing down cryptographic operations & Medium & openssl & 1231 \\ \hline
+        CVE-2016-2781 & chroot vulnerability allowing local users to escape to the parent session & Medium & coreutils & 1227 \\ \hline
+        CVE-2023-50495 & Segfault vulnerability in ncurses library & Medium & ncurses & 1221 \\ \hline
+        CVE-2023-0465 & OpenSSL vulnerability allowing malicious certificate authorities to bypass certificate policy checks & Medium & openssl & 1192 \\ \hline
+    \end{tabular}
+    \caption{Top detected vulnerabilities}
+    \label{tab:freqcve}
+\end{table}
+
+Then, we analyzed how the vulnerabilities were distributed in relation to the age of the tags. We found that the maximum number of vulnerabilities corresponded to tags that were about 4 years old and were updated in 2020. Overall, the histogram in Figure \ref{img:vulnstagyear} resembled a normal distribution.
+
+\image{vulnstagyear.png}{Number of vulnerabilities per the year of last update}{img:vulnstagyear}{0.7}
+
+In terms of the age of the vulnerabilities themselves, Figure \ref{img:vulnscveyear} illustrates the age distribution of vulnerabilities in the examined images. It is evident that the vast majority of detected vulnerabilities were reported between 2014 and 2024. However, some breaches date back to 2001. Additionally, it is notable that the number of vulnerabilities tends to increase each year. Examining the oldest detected vulnerabilities, we have compiled Table \ref{tab:oldcve}. This table indicates that the oldest vulnerabilities were initially discovered more than twenty years ago. These vulnerabilities affect well-known and widely used packages such as the Apache HTTP server and the krb5 library, which are required for interacting with domain infrastructure. Nevertheless, the number of images affected by these vulnerabilities is relatively low, due to the fact that the vulnerable versions of these packages are outdated to be included in modern images.
+
+\image{vulnscveyear.png}{Number of vulnerabilities and the CVE date}{img:vulnscveyear}{0.7}
 
 
-% cvssV3_severity
+\begin{table}[hbt]
+    \centering
+    \begin{tabular}{| p{0.2\linewidth} | p{0.5\linewidth} | p{0.12\linewidth} | p{0.08\linewidth} |}
+        \hline
+        \centering \textbf{CVE} & \centering \textbf{Description} & \centering \textbf{Package} & \centering\arraybackslash \textbf{Tags} \\ \hline 
+        CVE-2001-1534 & Apache mod\_usertrack vulnerability to bypass authentication by forgering session ID & apache2 & 13 \\ \hline
+        CVE-2002-1976 & Linux kernel ifconfig vulnerability allowing intruders to place a network interface in promiscuous mode for eavesdropping packets & net-tools & 65 \\ \hline
+        CVE-2002-2439 & gcc vulnerability allowing attackers to crash the system or execute arbitrary code due to an integer overflow & libgcc & 3 \\ \hline
+        CVE-2002-2443 & krb5 vulnerability allowing to cause DoS attacks by sending a specially crafted UDP packet that triggers an infinite loop & krb5 & 3 \\ \hline
+        CVE-2003-1307 & Apache mod\_php vulnerability allowing local users to control the server by sending signals and using file descriptors & apache2 & 15 \\ \hline
+        CVE-2003-1580 & php phf library vulnerability allowing remote code execution on the server by sending a crafted HTTP request that triggers a stack-based buffer overflow & apache2 & 15 \\ \hline
+        CVE-2003-1581 & Apache httpd vulnerability allowing malicious code injection into server log files by forgering DNS responses & apache2 & 15 \\ \hline
+        CVE-2004-0423 & FTP server (wuftpd) vulnerability allowing RCE on the system through buffer overflows & ssmtp & 2 \\ \hline
+        CVE-2004-0971 & krb5 vulnerability allowing local users to overwrite files on the system due to temporary files mishandling & krb5 & 140 \\ \hline
+        CVE-2005-4890 & Shadow and sudo vulnerability allowing attackers to hijack a user terminal session & shadow & 3 \\ \hline
+    \end{tabular}
+    \caption{Oldest vulnerabilities}
+    \label{tab:oldcve}
+\end{table}
+
+To further explore the correlation between the age of vulnerabilities and the age of tags, we should look at Figure \ref{img:vulnscveyearsc}. In this chart, each detected vulnerability is plotted on the chart according to the year of the last tag update and the year the vulnerability was discovered. It can be seen that the dots are slightly aligned with a diagonal line, which means that most images contain vulnerabilities that were discovered at the time of tag creation or afterwards. This is understandable, as when a tag is updated, it usually includes new versions of packages with security patches, so it is unlikely that an image would contain vulnerabilities discovered prior to its creation. However, after an image has been built and stored in a registry, its packets may still be found to be vulnerable in the same or subsequent years.
+
+Furthermore, the chart demonstrates that after 2020, the concentration of vulnerable packages increased. This can be seen in previous charts, and it can be attributed to the overall development of security practices and vulnerability searching and reporting, in particular.
+
+
+\image{vulnscveyearsc.png}{Correlation between age of vulnerabilities and images}{img:vulnscveyearsc}{1}
+
+Moving on to package analysis, Table \ref{tab:packages} depicts the distribution of popular packages. To begin with, (a) subtable lists the packages sorted by their occurrences in images and occurrences of vulnerabilities in them. In other words, this is a measure of both package popularity and susceptibility to breaches. As can be seen, some of the top packages in this benchmark are Linux libraries, curl and openssl. Subtable (b) provides information about the number of CVEs detected in each package. It is clear from this data that most reported vulnerabilities were found in the Linux kernel and Linux libraries. This highlights the importance of regularly updating the base layer of images used in production environments. Additionally, tools such as MySQL and OpenJDK, as well as browser engines like Firefox and Chromium, also tend to have a high number of detected breaches. Lastly, (c) subtable shows the popularity of packages among the evaluated images.Thus, openssl was found in 2366 of the 3200 tags evaluated. As it is part of most Linux distributions, it is a highly widespread package. Next, the ncurses, zlib and glibc libraries, as well as the curl and systemd packages, were found in approximately half of the evaluated tags. The scripting language Perl and the bash command interpreter were found in about one third of the images evaluated.
+
+\begin{table}[htb]
+    \centering
+    {\small
+    \subfloat[Popularity of packages]{
+    \begin{tabular}{lr} \toprule
+        \textbf{Package} & \textbf{Entries} \\ \midrule
+        linux & 53139 \\
+        binutils & 38896 \\
+        curl & 32641 \\
+        openssl & 31684 \\
+        stdlib & 29512 \\
+        glibc & 26843 \\
+        vim & 25297 \\
+        kernel & 23179 \\
+        imagemagick & 17779 \\
+        tiff & 16891 \\
+        systemd & 13052 \\
+        expat & 12627 \\
+        sqlite & 12201 \\
+        ncurses & 11776 \\
+        libxml2 & 10698 \\
+        vim-minimal & 10689 \\
+        openldap & 10503 \\
+        krb5 & 8725 \\
+        python2 & 8261 \\
+        openjdk & 8231 \\ \bottomrule
+    \end{tabular}
+    }
+    \hfill
+    \subfloat[CVEs by package]{
+    \begin{tabular}{lr} \toprule
+        \textbf{Package} & \textbf{CVEs} \\ \midrule
+        kernel & 1822 \\
+        linux & 1588 \\
+        mysql & 998 \\
+        linux-tools-common & 832 \\
+        openjdk & 797 \\
+        firefox & 679 \\
+        imagemagick & 573 \\
+        chromium-browser & 563 \\
+        tensorflow & 399 \\
+        tensorflow-gpu & 341 \\
+        binutils & 238 \\
+        linux-azure & 224 \\
+        qemu & 214 \\
+        tensorflow-cpu & 209 \\
+        tiff & 202 \\
+        vim & 181 \\
+        mariadb & 171 \\
+        tcpdump & 164 \\
+        libtiff & 142 \\
+        openssl & 137 \\ \bottomrule
+    \end{tabular}
+    }
+    \hfill
+    \subfloat[Images containing packages]{
+    \begin{tabular}{lr} \toprule
+        \textbf{Package} & \textbf{Tags} \\ \midrule
+        openssl & 2366 \\
+        ncurses & 1735 \\
+        curl & 1641 \\
+        zlib & 1523 \\
+        tar & 1482 \\
+        glibc & 1429 \\
+        systemd & 1402 \\
+        krb5 & 1366 \\
+        gnutls & 1337 \\
+        sqlite & 1258 \\
+        coreutils & 1253 \\
+        expat & 1243 \\
+        perl & 1200 \\
+        nghttp2 & 1197 \\
+        openldap & 1194 \\
+        passwd & 1177 \\
+        gpgv & 1170 \\
+        pam & 1146 \\
+        pcre3 & 1129 \\
+        bash & 1112 \\ \bottomrule
+    \end{tabular}
+    }
+    \caption{Occurrences of packages}
+    \label{tab:packages}
+}
+\end{table}
+
+Overall, only 7\% of the evaluated tags do not contain any vulnerabilities. Approximately 40\% of the vulnerable images contain at least one critical vulnerability, and another 50\% contain at least one vulnerability that has a high severity score according to the CVSS scoring system. This information is illustrated in Figure \ref{img:tagscvescore}. The most vulnerable images are listed in Table \ref{tab:imagescve}.
+
+\image{tagscvescore.png}{Severity of Vulnerable Images}{img:tagscvescore}{0.7}
+
+\begin{table}[htb]
+\centering
+\begin{tabular}{lcrr} \toprule
+    \textbf{Package} & \textbf{Last update} & \textbf{Pulls} & \textbf{CVEs} \\ \midrule
+        nexcess/php-fpm & 2020 & 41M & 3131 \\
+        appuio/s2i-maven-java & 2018 & 30M & 2943 \\
+        stevenctimm/gpgridvanilla & 2017 & 44M & 2688 \\
+        civisanalytics/civis-jupyter-r & 2020 & 49M & 2664 \\
+        eclipse/che-dev & 2019 & 92M & 2639 \\
+        civisanalytics/civis-jupyter-python3 & 2020 & 50M & 2205 \\
+        broadinstitute/gatk & 2020 & 33M & 2101 \\
+        scrapinghub/splash & 2017 & 73M & 1824 \\
+        civisanalytics/civis-jupyter-python2 & 2019 & 48M & 1818 \\
+        bugswarm/artifacts & 2018 & 165M & 1809 \\
+        broadinstitute/gatk & 2019 & 33M & 1794 \\
+        elgalu/selenium & 2017 & 111M & 1785 \\
+        civisanalytics/civis-services-shiny & 2020 & 49M & 1780 \\
+        avinetworks/controller & 2020 & 32M & 1757 \\
+        czero/cflinuxfs2 & 2017 & 36M & 1751 \\ \bottomrule
+\end{tabular}
+\caption{Top vulnerable images}
+\label{tab:imagescve}
+\end{table}
+
+However, no significant correlation could be inferred from Figure \ref{img:imagescvessc} between the popularity of an image and the number of vulnerabilities it contains.
+
+\image{imagescvessc.png}{Number of vulnerabilities and image popularity}{img:imagescvessc}{0.7}
+
+\FloatBarrier
+\clearpage
+
+\subsubsection{Quality of scanning tools}
+
+After analyzing the data obtained from the scanning tools and understanding it, we can move on to evaluating the quality performance of the scanners.
+
+As described in the previous section, all records from the perspective of each scanner can be categorized into four groups based on the results from its peers. These categories are True Positive (TP), True Negative (TN), False Positive (FP) and False Negative (FN). Figure \ref{img:tp2} shows a table with the records collected by each scanner for each image. The number of true positive records is shown in the corresponding cell. The same calculations are performed for the other three categories.
+
+\image{tp2.png}{Scanner stats}{img:tp2}{0.65}
+
+The next step is to perform a metric calculation based on the received number of records. The equations necessary for this calculation were discussed in the previous section. The results of the calculation of Precision, Recall and $F_1$-score are presented in Table \ref{tab:calc} (a).
+
+
+\begin{table}[htb]
+    \centering
+    {\small
+    \subfloat[Minimum confirmation number — 2]{
+        \begin{tabular}{lccc} \toprule
+            \textbf{Tool} & \textbf{Precision} & \textbf{Recall} & \textbf{$F_1$} \\ \midrule
+            Clair & 0.91 & 0.58 & 0.61 \\
+            Google & 0.9 & 0.88 & 0.85 \\
+            Grype & 0.68 & 0.89 & 0.75 \\
+            Scout & 0.89 & 0.75 & 0.75 \\
+            Snyk & 0.95 & 0.69 & 0.73 \\
+            Trivy & 0.92 & 0.76 & 0.78 \\ \bottomrule
+        \end{tabular}
+    }
+    \hfill
+    \subfloat[Minimum confirmation number — 1]{
+        \begin{tabular}{lccc} \toprule
+            \textbf{Tool} & \textbf{Precision} & \textbf{Recall} & \textbf{$F_1$} \\ \midrule
+            Clair & 0.94 & 0.51 & 0.57 \\
+            Google & 0.97 & 0.8 & 0.83 \\
+            Grype & 0.78 & 0.87 & 0.79 \\
+            Scout & 0.96 & 0.68 & 0.73 \\
+            Snyk & 0.98 & 0.61 & 0.68 \\
+            Trivy & 0.98 & 0.7 & 0.76 \\ \bottomrule
+        \end{tabular}
+    }
+    \caption{Quality metrics}
+    \label{tab:calc}
+}
+\end{table}
+
+
+Let us consider the visualisation of the results in Figure \ref{img:precisionrecall2}. As can be seen, all the tools demonstrate outstanding precision values, with all of them falling between 0.89 and 0.95. This means that among the vulnerabilities reported by each scanner, they are mostly correct and, in fact, exist in the image. This is at least as can be judged from the aggregated results of all the tools. Snyk demonstrates the highest result in this test. Next, the recall metric is one that not all scanning tools demonstrate well. The worst result among the evaluated tools is demonstrated by Clair — 0.58. In other words, approximately 40\% of the vulnerabilities reported by Clair were not actually validated by other tools and are therefore considered incorrect. Other tools perform better, with results ranging from 0.7 to 0.9.
+
+
+The overall performance of the scanners can be evaluated using the $F_1$ metric. This composite benchmark depends on the precision and recall values, and it provides a single number to demonstrate the performance. As shown in Figure \ref{img:f12}, all scanners are assessed in the range from 0.61 to 0.85, with Clair producing the lowest result again. This is due to the insufficient recall value of Clair, which influenced the overall metric. The best performance according to the $F_1$-score is demonstrated by Google Artifact Registry, as it presented good results in both precision and recall. Other tools also have comparable results around 0.75.
+
+\image{precisionrecall2.png}{Precision and Recall (number of confirmations — 2)}{img:precisionrecall2}{0.65}
+\image{f12.png}{$F_1$-score (number of confirmations — 2)}{img:f12}{0.59}
+
+Let us compare the results when the minimum number of validations required from neighbouring scanners was reduced from 2 to 1. This means that the criteria for considering a record to be correct are more relaxed. The results for this case are presented in Table \ref{tab:calc} (b), Figures \ref{img:precisionrecall1} and \ref{img:f11}. From the table, we can see that the precision values have increased as a result of the reduced number of confirmations, which indicates improved sensitivity. However, with this increase in precision, we also observe a decrease in recall values. In this scenario, half of the vulnerabilities reported by Clair may be incorrect. Nevertheless, the $F_1$ score remains relatively similar to the previous case.
+
+
+
+\image{precisionrecall1.png}{Precision and Recall (number of confirmations — 1)}{img:precisionrecall1}{0.7}
+\image{f11.png}{$F_1$-score (number of confirmations — 1)}{img:f11}{0.7}
+
+\subsection{Outcomes}
+
+In the previous section, we discussed the analysis of a sample of approximately 1,200 popular images and 3,200 tags from Docker Hub. Based on the aggregated data from Clair, Trivy, Docker Scout, Anchore Grype, Snyk, and Google Artifact Registry, we found that 93\% of the evaluated images contained at least one vulnerability. Most images contained at least one high or critical vulnerability, according to the CVSS severity scoring system. Additionally, it was discovered that the number of vulnerabilities in images has been increasing each year. This demonstrates the importance of static vulnerability analysis for images running in production environments. Installing a reliable pipeline that ensures that any known vulnerabilities are not present in the images can be an effective way to ensure the safety of containerized applications.
+
+The results of the quality assessment conducted on the six vulnerability scanners mentioned are also promising. It was found that they correctly identify approximately 80\% of the vulnerabilities reported to security databases. Among the tools tested, Google Artifact Registry performed the best reporting with quality score of 0.83. Nevertheless, other tools, including open-source ones, also demonstrated comparable performance.
+
+The comparison between precision and recall metrics raises the question of whether it is preferable to never miss an actual vulnerability, but occasionally report false positives, or whether it is better to never report false negatives, but risk missing important and real breaches.
+
+It is reasonable to consider that the answer to this question depends on the criticality of the services being deployed and the cost of support. For services that are exposed to the internet and play a critical role in an organisation, it may be better to stick on the side of caution and not miss any potential threats. In less critical cases, it may be acceptable to reduce the number of false positives and overall reported vulnerabilities.
+
+Hopefully, the results of our analysis will be helpful in choosing the right tool.
+
+
 
 % предложить мол что выбирать какую ошибку. если уязвимость критическая лучше её передетектить. если уязвимость не критическая то лучше недо детектить чтобы снизить нагрузку на проверку руками и патчи и работу людей
 
-Both precision and recall may be useful in cases where there is imbalanced data. However, it may be valuable to prioritize one over the other in cases where the outcome of a false positive or false negative is costly. For example, in medical diagnosis, a false positive test can lead to unnecessary treatment and expenses. In this situation, it is useful to value precision over recall. In other cases, the cost of a false negative is high. For instance, the cost of a false negative in fraud detection is high, as failing to detect a fraudulent transaction can result in significant financial loss
+% Both precision and recall may be useful in cases where there is imbalanced data. However, it may be valuable to prioritize one over the other in cases where the outcome of a false positive or false negative is costly. For example, in medical diagnosis, a false positive test can lead to unnecessary treatment and expenses. In this situation, it is useful to value precision over recall. In other cases, the cost of a false negative is high. For instance, the cost of a false negative in fraud detection is high, as failing to detect a fraudulent transaction can result in significant financial loss
 
+% mention my github ezzzi

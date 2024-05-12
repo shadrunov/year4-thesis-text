@@ -1,1 +1,319 @@
 \section{Security analysis of hardening techniques}
+
+In this section, we will review previously reported vulnerabilities in the Linux kernel and container runtimes, in order to determine which methods of enhancing security are effective and which are not, in specific cases.
+
+\subsection{Selection of Vulnerabilities}
+In order to combine a list of security vulnerabilities that can lead to the execution of containerized applications, open sources on the Internet and literature were reviewed. Container Security Site provides a list of container security vulnerabilities compiled by Christophe Tafani-Dereeper, a cloud security expert \cite{s:christoph1}. This list includes the Linux CVEs and vulnerabilities in runc, containerd, Docker and Kubernetes. 
+
+In literature, several researchers have mentioned container breakout vulnerabilities we may also include in our review. Jian and Chen in their work explore the possibility to bypass container isolation by two vulnerabilities, CVE-2014-0038 and CVE-2016-5195. The first one is a bug in the Linux kernel allowing local users to elevate privileges by a heap overflow. The second vulnerability, CVE-2016-5195, is DirtyCOW vulnreability, known vulnerability exploiting race condition to override write-protected areas of memory \cite{acm:5}. The researchers additionally mention other vulnerabilities found in Docker: CVE-2014-6407, CVE-2014-9356, CVE-2014-9358, CVE-2014-9357, CVE-2015-3627, CVE-2015-3630. These are vulnerabilities exploiting path traversals, chroot escapes and access to special file systems on
+the host to escape from the container. 
+
+Bélair et al. in their study, suggest examining CVE-2019-5736, a runc vulnerability. This vulnerability allows intruders to take control of the runc binary, and thus trigger the execution of arbitrary code on the host \cite{acm:6}.
+
+Another study on the security of containerized applications, conducted by Reeves et al., identifies a list of potential vulnerabilities that could lead to container escape \cite{c:19}. In particular, the authors suggest that there are three main categories of vulnerabilities that can be exploited to escape from the container:
+\begin{itemize}
+    \item \textbf{File descriptor tampering}: CVE-2016-8649 (LXC), CVE-2016-9962 (runc), CVE-2019-5736 (runc);
+    \item \textbf{Bypass access control}: CVE-2019-19921 (runc), CVE-2020-15257 (containerd), CVE-2020-2023, CVE-2020-2025, CVE-2020-2026 (kata);
+    \item \textbf{Injection to host-runned binaries}: CVE-2018-15664 and CVE-2019-14271 (Docker).
+\end{itemize}
+
+After reviewing the sources, we have compiled the information in the table \ref{tab:escapecve}.
+
+
+\begin{table}[hbt]
+    \centering
+    \begin{tabular}{| p{0.22\linewidth} | p{0.77\linewidth} |} \hline
+        \multicolumn{2}{|l|}{\textbf{Linux}} \\ \hline
+        CVE-2022-0847 & Kernel bug allowing local users to change unwritable areas of memory (DirtyPipe) \\ \hline
+        CVE-2022-0492 & Control groups v1 bug allowing an attacker to escape a container by rewriting release\_agent command \\ \hline
+        CVE-2022-0185 & Buffer overflow vulnerability potentially leading to privilege escalation \\ \hline
+        CVE-2021-3490 & Buffer overflow vulnerability in eBPF evaluation in the Linux kernel \\ \hline
+        CVE-2021-31440 & Flaw in the way the kernel handles eBPF programs allowing privilege escalation \\ \hline
+        CVE-2021-22555 & Heap out-of-bounds write vulnerability in Netfilter component of the kernel \\ \hline
+        CVE-2017-1000112 & Memory corruption vulnerability in the way kernel handles UDP packets \\ \hline
+        CVE-2017-5123 & Flaw in waitid system call allowing unprivileged users to bypass security sandboxes \\ \hline
+        CVE-2016-5195 & Copy-on-write mishandling allowing attackers to write to a read-only memory areas (DirtyCOW) \\ \hline
+        \multicolumn{2}{|l|}{\textbf{runc}} \\ \hline
+        CVE-2024-21626 & A flow in the way runc handles file descriptors allowing a maliciously created container access host file system (Leaky Vessels) \\ \hline
+        CVE-2021-30465 & Race condition in runc when mounting volumes into several specifically created containers allowing host file system access \\ \hline
+        CVE-2019-19921 & Incorrect access control when mounting volumes in runc allowing an attacker to spawn two containers with specific volumes configuration to break out of the container \\ \hline
+        CVE-2019-5736 & Runc vulnerability allowing an attacker to overwrite runc binary on the host and execute arbitrary code  \\ \hline
+        CVE-2016-9962 & Ptrace between container processes allowed an access to process initialization artefacts leading to breakout \\ \hline
+        \multicolumn{2}{|l|}{\textbf{containerd}} \\ \hline
+        CVE-2022-23648 & Flaw in volume mounting allowed specially crafted image configuration to gain access to arbitrary files and directories on the host \\ \hline
+        CVE-2020-15257 & Improper isolation of the containerd-shim API alowed malicious containers running in the same network namespace as the shim getting escalated privileges \\ \hline
+        \multicolumn{2}{|l|}{\textbf{Docker}} \\ \hline
+        CVE-2024-23653 & Vulnerability in BuildKit allowing attackers to bypass security restrictions from malicious image configuration \\ \hline
+        CVE-2024-23651 & Vulnerability in BuildKit allowing for container escape when building an image using a malicious image configuration \\ \hline
+        CVE-2021-21284 & Race condition allowing root user in container namespaces with some access to the host filesystem to modify configuration files and escalate to root user on the host \\ \hline
+        CVE-2019-14271 & Malicious container can gain full root access on the host injecting code to the dynamically loaded library which loads to docker cp command \\ \hline
+        CVE-2018-15664 & Flaw in docker cp command are allows attacker to copy arbitrary code to files on the host pointed by the symlink in container \\ \hline
+    \end{tabular}
+    \caption{Container breakout vulnerabilities}
+    \label{tab:escapecve}
+\end{table}
+
+\FloatBarrier
+\clearpage
+
+
+\subsection{Linux vulnerabilities}
+Next, we will discuss the Linux kernel's vulnerabilities and explore ways to exploit them, as well as the protection mechanisms that can be used to prevent exploitation.
+
+\subsubsection{CVE-2022-0847}
+
+\subsubsection*{Description}
+
+CVE-2022-0847 (DirtyPipe) — Linux kernel vulnerability existed in versions from 5.8 to 5.16.11, 5.15.25 и 5.10.102. It is related to the implementation of access control to buffers. Attackers could exploit this vulnerability to gain write permissions to cached memory pages even though they were marked with read-only flag. In the context of containers, an attacker can use this vulnerability to tamper the read-only layers of the container image and thus affect other containers spawned from the same image \cite{s:h:2}.
+
+Exploit published on the web-page of vulnerability (\url{https://dirtypipe.cm4all.com}), works the following way. First, the process opens a file in reading mode thus moving its content to memory cache. Next, an empty pipe buffer is created and initalizes with random bytes so all the pages could be marked with \texttt{PIPE\_BUF\_FLAG\_CAN\_MERGE} flag. Then, \texttt{splice()} function is called so that the buffer points to the cached pages of the file. Then, the attacker has to write a payload to the buffer and this data will be written over the file cache, because the flag allows writing to the existing page. As the result, all other processes that try to access this file will obtain its tampered copy from the cache. 
+
+\subsubsection*{Defence}
+
+To prevent this vulnerability from exploiting, seccomp profiles are effective. It is sufficient to disable \texttt{splice()} syscall which is necessary to move the data between the file descriptor and the buffer \cite{s:h:4}. In this case, the exploit discussed above will not achieve its goal. As a matter of fact, this system call is blocked by default seccomp filter enforced by Docker.
+
+Other defence mechanisms do not affect the ability to exploit CVE-2022-0847. Setting User ID can only limit the number of files available for this attack, because the exploit requires read permission to the target file and Linux file permissions can forbid regular users to read sensitive files, but the vulnerability remains exploitable. However, many sensitive system files are still available to read by any user. No additional privileges are required for exploitation, so dropping capabilities has no effect. AppArmor or SELinux can also limit the range of files available for read access, but they do not block the exploitation either.
+
+It is also clear that alternative runtimes based on putting the virtual machine isolation around the container successfully mitigate this vulnerability, because this way the container uses its own kernel and cannot thus affect the host. 
+
+This is summarised in Table \ref{tab:h:1}.
+
+\begin{table}[H]
+    \centering \small
+    \begin{tabular}{| p{0.18\linewidth} | p{0.1\linewidth} | p{0.1\linewidth} | p{0.1\linewidth} | p{0.1\linewidth} | p{0.12\linewidth} | p{0.12\linewidth} |} \hline
+    CVE & Rootless mode & User ID & Dropped Privileges & seccomp & AppArmor, SELinux & Alternative Runtimes \\ \hline
+    CVE-2022-0847 & - & - & - & \cellcolor{green!25} + & - & \cellcolor{green!25} +  \\ \hline
+    \end{tabular}
+    \caption{CVE-2022-0847}
+    \label{tab:h:1}
+\end{table}
+
+
+\subsubsection{CVE-2022-0492}
+
+\subsubsection*{Description}
+
+CVE-2022-0492 is a vulnerability in the Linux kernel related to the bug in control groups v1 (cgroups). This bug potentially allows an intruder to break out from the containerized environment and gain the access on the host. This breach is caused by a special \texttt{release\_agent} file in cgroups v1. This file is executed each time when the last process leaves the cgroup and it becomes empty. As the command specified in \texttt{release\_agent} file is executed with elevated privileges on the host, its tampering can lead to host compromise.
+
+The exploit for CVE-2022-0492 works the following way. It is necessary to be assigned to the namespace where the process has \texttt{CAP\_SYS\_ADMIN} capability (this privilege could be granted, for instance, by \texttt{--privileged} flag when container is started by Docker or by switching to a new User namespace. This is applicable to systems with \texttt{kernel.unprivileged\_userns\_clone} kernel parameter set to 1). With this capability, the attacker has to mount cgroupfs (example command: \texttt{mount -t cgroup -o rdma cgroup /mnt}). Next, new cgroup must be created (\texttt{mkdir /mnt/x}) and release agent enabled (\texttt{echo 1 > /mnt/x/notify\_on\_release}). Also, the desired command should be written to the \texttt{/mnt/release\_agent} file. Final step is to spawn and terminate a process in the freshly created control group \texttt{x} (\texttt{sh -c "echo \$\$ > /mnt/x/cgroup.procs"}). After that the command specified in \texttt{/mnt/release\_agent} file will be performed on the host with root privileges. The process of exploitation is illustrated in Figure \ref{img:h1}.
+
+\image{h1.png}{Exploitation of CVE-2022-0492}{img:h1}{1}
+
+
+\subsubsection*{Defence}
+Let us consider the requirements for successfully performing the exploit. First of all, the cgroups v1 must be enabled on the host which is becoming a deprecated version and is gradually replaced by cgroups v2. Next, the user inside the container must be root, otherwise the cgroupfs file system will not be accessable. Also, either \texttt{CAP\_SYS\_ADMIN} capability is required or the ability to obtain it by switching to new user namespace. Next, the containerized process needs a capability to perform mounting. And luckily it is possible to mitigate the exploitation on every stage of the process.
+
+Rootless mode (using user namespace for mapping root user inside the container to non-root user on the host) as well as setting User ID inside the container makes it impossible to access cgroupfs and therefore exploit CVE-2022-0492, because this file system is only accessible by root user. Linux security modules AppArmor and SELinux restrict mounting volumes to the containers in runtime, which also protects the system from exploiting, because cgroupfs must be mounted inside the container in write mode. Dropped privileges (including \texttt{CAP\_SYS\_ADMIN}) effecitvely prevent the attack as long as switching to new user namespaces is prohibited for non-root users (with kernel setting \texttt{kernel.unprivileged\_userns\_clone} set to 0). Finally, even default seccomp profile enforced by Docker disables \texttt{mount()} and \texttt{unshare()} system calls required for mounting cgroupfs and switching to new namespace. For this reason, the default seccomp profile has to be disabled in order to perform the attack. Overall, the layers of additional defencive mechanisms are proven to be effecitve in the context of CVE-2022-0492 vulnerability.
+
+VM-based container runtimes can also successfully mitigate this vulnerability, as it requires the container to be able to access host kernel and host objects. It is also stated by Google that gVisor is unaffected by this vulnerability as it prohibits the access to the vulnerable system call on the host\footnote{\url{https://cloud.google.com/anthos/clusters/docs/security-bulletins}}.
+
+The summary of effectiveness of security tools is presented in Table \ref{tab:h:2}.
+
+\begin{table}[H]
+    \centering \small
+    \begin{tabular}{| p{0.18\linewidth} | p{0.1\linewidth} | p{0.1\linewidth} | p{0.12\linewidth} | p{0.1\linewidth} | p{0.12\linewidth} | p{0.12\linewidth} |} \hline
+    CVE & Rootless mode & User ID & Dropped Privileges & seccomp & AppArmor, SELinux & Alternative Runtimes \\ \hline
+    CVE-2022-0492 & \cellcolor{green!25} + & \cellcolor{green!25} + & \cellcolor{yellow!25} +/- \linebreak if no userns & \cellcolor{green!25} + & \cellcolor{green!25} + & \cellcolor{green!25} + \\ \hline
+    \end{tabular}
+    \caption{CVE-2022-0492}
+    \label{tab:h:2}
+\end{table}
+
+\subsubsection{CVE-2022-0185}
+\subsubsection*{Description}
+
+CVE-2022-0185 is a kernel vulnerability which affects the kernel versions from 5.1 to 5.16. It leverages buffer overflowing in the component of kernel called Filesystem Context. Due to the bug in \texttt{legacy\_parse\_param} function, the length of supplied arguments was not checked and because of that an unprivileged user (if it is permitted to switch to new user namespace for regular users) or the user with \texttt{CAP\_SYS\_ADMIN} capability in the current namespace can elevate the privileges in any other namespace including root one, which means to break out of the container. The privileges are required to be able to open a special filesystem which lacks the support of the Kernel Filesystem Context API and this way trigger the fallback to the legacy function. The exploits for this vulnerability are available on GitHub\footnote{\url{https://github.com/Crusaders-of-Rust/CVE-2022-0185}}.
+
+\subsubsection*{Defence}
+
+CVE-2022-0185 vulnerability uses the kernel bug, and in such cases it is likely that kernel security mechanisms will have no effect (Table \ref*{tab:h:3}).
+
+The main requirement for exploitation of this vulnerability is to have  \texttt{CAP\_SYS\_ADMIN} capability. Rootless mode and User ID do not block the exploitation of this vulnerability, unless switching to new user namespaces is prohibited for non-root users (\texttt{kernel.unprivileged\_userns\_clone = 0}). Otherwise, a user can simply run a process in a new user namespace where it will successfully be granted with \texttt{CAP\_SYS\_ADMIN} privilege. Dropped capabilities (\texttt{CAP\_SYS\_ADMIN}) is also effective with the condition mentioned above.
+
+Seccomp profile is a recommended way to mitigate this vulnerability, in case it is impossible to patch the kernel. Default Docker seccomp profile filters \texttt{unshare} system call needed to obtain required privilege in new namespace, so this way the vulnerability cannot be exploited.
+
+Finally, alternative container runtimes are again a remedy in the case of this vulnerability due to providing a separate kernel for contianer process.
+
+\begin{table}[H]
+    \centering \small
+    \begin{tabular}{| p{0.18\linewidth} | p{0.1\linewidth} | p{0.1\linewidth} | p{0.12\linewidth} | p{0.1\linewidth} | p{0.12\linewidth} | p{0.12\linewidth} |} \hline
+    CVE & Rootless mode & User ID & Dropped Privileges & seccomp & AppArmor, SELinux & Alternative Runtimes \\ \hline
+    CVE-2022-0185 & - & - & \cellcolor{yellow!25} +/- \linebreak if no userns & \cellcolor{green!25} + &  & \cellcolor{green!25} + \\ \hline
+    \end{tabular}
+    \caption{CVE-2022-0185}
+    \label{tab:h:3}
+\end{table}
+
+
+\subsubsection{CVE-2021-3490}
+\subsubsection*{Description}
+
+CVE-2021-3490 is a Linux kernel vulnerability present in version since 5.7. It is caused by the lack of proper check of bounds of 32-bit values during the execution of bitwise logic operators such as AND, OR and XOR in eBPF kernel module. An intruder can use this bug to access data outside the designated memory area and trigger the execution of malicious code by the kernel. This vulnerability can lead to the container escape in case if the process inside the container is granted with \texttt{CAP\_BPF} capability.
+
+
+\subsubsection*{Defence}
+
+For successful exploitation of this vulnerability and breaking out of the container contraints the isolated process must be granted with additional privileges: \texttt{CAP\_BPF} or \texttt{CAP\_SYS\_ADMIN}. In addition, the \texttt{bpf()} system call must be available to the process. These two requirements explain the effectiveness of dropped privileges (for instance, the \texttt{--privileged} flag in Docker should not be set) as well as the default seccomp filter which disables \texttt{bpf()} system calls for running containers. Other kernel security features cannot be effective in the case of this vulnerability.
+
+Another way of mitigating this vulnerability is to use non-kernel virtualisation provided by VM-based runtimes (Table \ref{tab:h:4}).
+
+
+\begin{table}[H]
+    \centering \small
+    \begin{tabular}{| p{0.18\linewidth} | p{0.1\linewidth} | p{0.1\linewidth} | p{0.12\linewidth} | p{0.1\linewidth} | p{0.12\linewidth} | p{0.12\linewidth} |} \hline
+    CVE & Rootless mode & User ID & Dropped Privileges & seccomp & AppArmor, SELinux & Alternative Runtimes \\ \hline
+    CVE-2021-3490 & - & - & \cellcolor{yellow!25} +/- \linebreak if no userns & \cellcolor{green!25} + &  & \cellcolor{green!25} + \\ \hline
+    \end{tabular}
+    \caption{CVE-2021-3490}
+    \label{tab:h:4}
+\end{table}
+
+
+
+\subsubsection{CVE-2021-31440}
+\subsubsection*{Description}
+
+CVE-2021-31440 is another Linux kernel vulnerability related to eBPF processing. It affects kernel versions from 5.7. The cause of this vulnerability is the lack of proper validation of user-supplied eBPF programs before executing them. This way, specifically crafted payload can enable a local user to elevate the privileges and execute arbitrary code inside the kernel.
+
+\subsubsection*{Defence}
+
+The exploitation scheme is similar to the previously discussed vulnerability, so the conclusions remain correct. Effecitve means of defence are limited privileges and seccomp filtering. This way, a process will be unable to access eBPF functionality of the kernel (Table \ref{tab:h:5}).
+
+\begin{table}[H]
+    \centering \small
+    \begin{tabular}{| p{0.18\linewidth} | p{0.1\linewidth} | p{0.1\linewidth} | p{0.12\linewidth} | p{0.1\linewidth} | p{0.12\linewidth} | p{0.12\linewidth} |} \hline
+    CVE & Rootless mode & User ID & Dropped Privileges & seccomp & AppArmor, SELinux & Alternative Runtimes \\ \hline
+    CVE-2021-31440 & - & - & \cellcolor{yellow!25} +/- \linebreak if no userns & \cellcolor{green!25} + &  & \cellcolor{green!25} + \\ \hline
+    \end{tabular}
+    \caption{CVE-2021-31440}
+    \label{tab:h:5}
+\end{table}
+
+
+
+
+\subsubsection{CVE-2021-22555}
+\subsubsection*{Description}
+
+CVE-2021-22555 is a Linux kernel vulnerability that remained undiscovered for a long time since the version 2.6.19. It resides in Netfilter subsystem of the kernel and enables local user to obtain root privileges, even from the inside of the container.
+
+The bug is related to Netfilter handlers \texttt{IPT\_SO\_SET\_REPLACE} and \texttt{IP6T\_SO\_SET\_REPLACE} leading to buffer overflow and consequent arbitrary instructions exectution with elevated privileges.
+
+\subsubsection*{Defence}
+
+To access the flawed Netfilter handlers, the process has to obtain the \texttt{CAP\_NET\_ADMIN} capability which generally allows priviliged operations on the network stack. To gain this privilege, it is sufficient to switch to new user and network namespaces. For this reason, dropped privileges provide protection from the exploitation only if switching to namespaces is disabled for non-root users. If this setting is disabled, dropping privileges is an effective way to defend the system. 
+
+Seccomp profiles are effective in the context of CVE-2021-22555 as well. The default profile set by Docker bans the \texttt{unshare()} system call and \texttt{clone()} system call required to switch to new namespaces and obtain missing capabilities. 
+
+Finally, VM-based container runtimes are also effective in mitigation of this vulnerability (Table \ref{tab:h:6}).
+
+\begin{table}[H]
+    \centering \small
+    \begin{tabular}{| p{0.18\linewidth} | p{0.1\linewidth} | p{0.1\linewidth} | p{0.12\linewidth} | p{0.1\linewidth} | p{0.12\linewidth} | p{0.12\linewidth} |} \hline
+    CVE & Rootless mode & User ID & Dropped Privileges & seccomp & AppArmor, SELinux & Alternative Runtimes \\ \hline
+    CVE-2021-22555 & - & - & \cellcolor{yellow!25} +/- \linebreak if no userns & \cellcolor{green!25} + &  & \cellcolor{green!25} + \\ \hline
+    \end{tabular}
+    \caption{CVE-2021-22555}
+    \label{tab:h:6}
+\end{table}
+
+
+
+\subsubsection{CVE-2017-1000112}
+\subsubsection*{Description}
+
+CVE-2017-1000112 is a vulnerability caused by the race condition while processing UDP-segments into IP-packets. This process is known as a UFO (UDP Fragmentation Offload) and it is a method of delegating the task of splitting large UDP datagrams into smaller packets to the network card. This currently deprecated kernel mechanism allowed an attacker to change the type of object from UFO to non-UFO, thus changing the bounds of memory the object must occupy. Because of that the break out of designated memory area occurs and this way the attacker can rewrite the pointer to callback function and thus trigger the execution of malicious payload and escalate the privileges. 
+
+\subsubsection*{Defence}
+
+To successfully exploit this vulnerability the process needs the \texttt{CAP\_NET\_ADMIN} capability. Similarly to the previously discussed vulnerability, it is useful to drop the elevated privileges for running process if the mechanism of switching to new namespaces is disabled. Also, seccomp profile disabling the \texttt{unshare()} and \texttt{clone()} system calls is effective as well (Table \ref{tab:h:7}).
+
+\begin{table}[H]
+    \centering \small
+    \begin{tabular}{| p{0.18\linewidth} | p{0.1\linewidth} | p{0.1\linewidth} | p{0.12\linewidth} | p{0.1\linewidth} | p{0.12\linewidth} | p{0.12\linewidth} |} \hline
+    CVE & Rootless mode & User ID & Dropped Privileges & seccomp & AppArmor, SELinux & Alternative Runtimes \\ \hline
+    CVE-2017-1000112 & - & - & \cellcolor{yellow!25} +/- \linebreak if no userns & \cellcolor{green!25} + &  & \cellcolor{green!25} + \\ \hline
+    \end{tabular}
+    \caption{CVE-2017-1000112}
+    \label{tab:h:7}
+\end{table}
+
+
+\subsubsection{CVE-2017-5123}
+\subsubsection*{Description}
+
+CVE-2017-5123 is a Linux kernel vulnerability in the \texttt{waitd} system call implementation. This system call is a function used by a parent process to wait for the state of its child process.
+
+The bug is located in \texttt{kernel/exit.c} file and allows the user to write data to arbitrary memory address due to lack of proper check if the pointer is located in the user space. The existing exploits suggest to override the capabilities assigned by Docker and this way gain additional privilege and escape the container. Another way is to write zeros and become a user with ID 0 (root). 
+
+The possible exploit for container breakout works the following way. The \texttt{fork()} system call is called multiple times to create multiple structs in the kernel memory heap. Then zero values should be written to addresses where the structs might be located, Finally, if some of the structs gets overwritten (we can see it by calling \texttt{getuid}), we can overwrite the rest of the structure and gain additional capabilities.
+
+\subsubsection*{Defence}
+
+This vulnerability in the \texttt{waitd} system call can be exploited very easily. The attacker need an access to the \texttt{fork} and \texttt{getuid} system calls, which are usually granted to all users. No additional privileges or root access are required. The only feasible protective measure would be to gain additional isolation from the host system kernel by running container inside the VM (Table \ref{tab:h:8}).
+
+\begin{table}[H]
+    \centering \small
+    \begin{tabular}{| p{0.18\linewidth} | p{0.1\linewidth} | p{0.1\linewidth} | p{0.12\linewidth} | p{0.1\linewidth} | p{0.12\linewidth} | p{0.12\linewidth} |} \hline
+    CVE & Rootless mode & User ID & Dropped Privileges & seccomp & AppArmor, SELinux & Alternative Runtimes \\ \hline
+    CVE-2017-5123 & - & - & - & - & - & \cellcolor{green!25} + \\ \hline
+    \end{tabular}
+    \caption{CVE-2017-5123}
+    \label{tab:h:8}
+\end{table}
+
+
+\subsubsection{CVE-2016-5195}
+\subsubsection*{Description}
+
+CVE-2016-5195 vulnerability also known as DirtyCow affects the Linux kernel versions from 2.6.22 to 4.8.3. It is again related to the race condition in the implementation of copy-on-write mechanism in memory pages marked with \texttt{dirty bit} flag. Using this vulnerability, a local user can elevate its privileges and alter any file which may lead to the escape from the container.
+
+\subsubsection*{Defence}
+
+The ways to mitigate CVE-2016-5195 are also limited as the only requirement for exploiting is to be able to read from the file. However, on certain systems using the most popular exploit might be limited by disabling the \texttt{ptrace} system call. This system call is included in one of the most popular exploits\footnote{\url{https://github.com/scumjr/dirtycow-vdso}} based on VSDO shared library. This shared object is unique system-wide and it is available for any provess to read. By overwriting this shared library a malicious process can escape from the container (Table \ref{tab:h:9}).
+
+\begin{table}[H]
+    \centering \small
+    \begin{tabular}{| p{0.18\linewidth} | p{0.1\linewidth} | p{0.1\linewidth} | p{0.12\linewidth} | p{0.1\linewidth} | p{0.12\linewidth} | p{0.12\linewidth} |} \hline
+    CVE & Rootless mode & User ID & Dropped Privileges & seccomp & AppArmor, SELinux & Alternative Runtimes \\ \hline
+    CVE-2016-5195 & - & - & - & \cellcolor{yellow!25} +/- \linebreak with ptrace exploit & - & \cellcolor{green!25} + \\ \hline
+    \end{tabular}
+    \caption{CVE-2016-5195}
+    \label{tab:h:9}
+\end{table}
+
+
+
+\FloatBarrier
+\clearpage
+
+
+\subsection{Outcomes}
+
+In this section, the results from previous dicussion will be combined (Table \ref{tab:h:10}).
+
+\begin{table}[H]
+    \centering \small
+    \begin{tabular}{| p{0.18\linewidth} | p{0.1\linewidth} | p{0.1\linewidth} | p{0.12\linewidth} | p{0.1\linewidth} | p{0.12\linewidth} | p{0.12\linewidth} |} \hline
+    CVE & Rootless mode & User ID & Dropped Privileges & seccomp & AppArmor, SELinux & Alternative Runtimes \\ \hline
+    CVE-2022-0847 & - & - & - & \cellcolor{green!25} + & - & \cellcolor{green!25} +  \\ \hline
+    CVE-2022-0492 & \cellcolor{green!25} + & \cellcolor{green!25} + & \cellcolor{yellow!25} +/- \linebreak if no userns & \cellcolor{green!25} + & \cellcolor{green!25} + & \cellcolor{green!25} + \\ \hline
+    CVE-2022-0185 & - & - & \cellcolor{yellow!25} +/- \linebreak if no userns & \cellcolor{green!25} + &  & \cellcolor{green!25} + \\ \hline
+    CVE-2021-3490 & - & - & \cellcolor{yellow!25} +/- \linebreak if no userns & \cellcolor{green!25} + &  & \cellcolor{green!25} + \\ \hline
+    CVE-2021-31440 & - & - & \cellcolor{yellow!25} +/- \linebreak if no userns & \cellcolor{green!25} + &  & \cellcolor{green!25} + \\ \hline
+    CVE-2021-22555 & - & - & \cellcolor{yellow!25} +/- \linebreak if no userns & \cellcolor{green!25} + &  & \cellcolor{green!25} + \\ \hline
+    CVE-2017-1000112 & - & - & \cellcolor{yellow!25} +/- \linebreak if no userns & \cellcolor{green!25} + &  & \cellcolor{green!25} + \\ \hline
+    CVE-2017-5123 & - & - & - & - & - & \cellcolor{green!25} + \\ \hline
+    CVE-2016-5195 & - & - & - & \cellcolor{yellow!25} +/- \linebreak with ptrace exploit & - & \cellcolor{green!25} + \\ \hline
+\end{tabular}
+    \caption{Linux kernel vulnerabilities}
+    \label{tab:h:10}
+\end{table}
+
+As can be seen, kernel vulnerabilities are particularly dangerous as they can often be exploited despite hardening measures. This is understandable, as most security features operate in the kernel and are unable to control malicious activities within the system.
+
+Nevertheless, some security measures have demonstrated their effectiveness. For example, seccomp filtering is a tool that protects the system from almost all known kernel vulnerabilities. In addition, dropping unnecessary privileges also adds an extra layer of security.
+
+Another way to install additional protection in sensitive and dangerous environments is to use alternative container runtimes. These tools, including Kata Containers, Unikernels, and Firecracker, use virtual machine (VM) isolation to run containers and are not affected by vulnerabilities in the host operating system's kernel. However, like any software, these tools can have their own vulnerabilities. As we mentioned earlier, there are some examples of this.
+
+Overall, it is clear that a robust defense is essential for securing containerized applications. By doing so, it is possible to not only defend against attacks that exploit known vulnerabilities, but also protect the services from zero-day vulnerabilities that have not yet been reported.

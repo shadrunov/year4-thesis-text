@@ -47,10 +47,9 @@ By using namespaces, developers can create environments that are isolated from t
 
 \subsubsection{Capabilities}
 
-Finally, capabilities have brought a fine-grained division of privileges than in traditional dichotomy of privileged (User ID 0) and unprivileged processes. Since they were introduced in kernel 2.2, it is possible to assign a thread with required groups of privileges so that it may perform certain sensitive actions in necessary parts of the system \cite{m:capabilities}. Modern kernel versions provide about 40 capabilities, including possibility to control system time, interact with kernal audit system, manipulate other processes and file permissions or bind to ports with numbers less than 1024.
+Finally, capabilities have introduced a more granular division of privileges compared to the traditional dichotomy between privileged (User ID 0) and unprivileged processes. Since their introduction in kernel 2.2, it has been possible to assign threads with specific groups of privileges, so that they can perform certain sensitive actions in specific parts of the system \cite{m:capabilities}. Modern kernel versions support approximately 40 capabilities, including the ability to control system time, interact with the kernel audit system, manipulate other processes, and manage file permissions or bind to ports with port numbers less than 1024.
 
-Containers as well as regular processes can be assigned with various capabilities. Typically, the set of required capabilities for container to successfully run could be significantly reduced, as containers do not need to run administrative tasks. Docker daemon spawns containers with limited privileges, and necessary ones could be added by developers \cite{d:dockersecurity}. In addition, Docker provides the \texttt{--privileged} flag which grants access
-to an extended range of privileged activities \cite{d:dockerrun}. It was developed to support Docker-in-Docker scenarious, however, it imposes additional security risks.
+Containers, as well as regular processes, can be assigned with various capabilities. Typically, the set of required capabilities for a containerized application to successfully run can be significantly reduced, as containers do not need to perform administrative tasks. For that reason, the Docker daemon spawns containers with limited privileges, and additional ones can be added by developers \cite{d:dockersecurity}. In addition, Docker provides the \texttt{--privileged} flag, which grants access to an extended range of privileged actions \cite{d:dockerrun}. This feature was developed to support Docker-in-Docker scenarios, however, it also imposes additional security risks.
 
 \clearpage
 \subsection{Runtimes}
@@ -148,7 +147,7 @@ After \texttt{newParentProcess} returns the parent process object, \texttt{paren
 
 After stage \texttt{2: STAGE\_INIT} child process is ready, \texttt{init.go} calls \texttt{libcontainer.Init()}, which consequently triggers \texttt{startInitialization()}. This function acquires init and log pipes and determines whether \texttt{runc exec} (\texttt{linuxSetnsInit}) or \texttt{runc create/run} (\texttt{linuxStandardInit}) was issued.
 
-Next, \texttt{containerInit} and \texttt{linuxStandardInit.Init()} methods are executed. The last function actually does the initialization work such as networking and routing setup, SELinux labeling, console, hostname, AppArmor, sysctl properties, Seccomp. After that, \texttt{system.Exec} replaces the running binary image with the one from \texttt{config.json}.
+Next, \texttt{containerInit} and \texttt{linuxStandardInit.Init()} methods are executed. The last function actually does the initialization work such as networking and routing setup, SELinux labeling, console, hostname, AppArmor, sysctl properties, seccomp. After that, \texttt{system.Exec} replaces the running binary image with the one from \texttt{config.json}.
 
 Overall, runc is a lightweight, OCI compliant, high performance, and low-level container runtime which supports various security features including seccomp, SElinux and AppArmor \cite{c:5}. runc relies on the Linux kernel features such as cgroups and namespaces to provide necessary degree of isolation. Although battle-tested, runc was discovered to be prone to vulnerabilities multiple times throughout its existance, for example, CVE-2019-5736, CVE-2016-9962 \cite{s:unit42} \cite{s:rh1}.
 
@@ -189,7 +188,7 @@ Unlike OCI-compliant container runtimes, LXC is suitable for running fully packe
 
 To spawn LXC containers, it is possible to use \texttt{lxc-create} command with the name of the selected Linux template. Other LXC utilities include \texttt{lxc-start} which executes the init process in the container and \texttt{lxc-attach} which provides a container shell \cite{m:lxc}.
 
-As illustrated by Flauzac et al., there are a few differences between LXC and other runtimes \cite{pcs:1}. LXC leverages User namespace by default to create unprivileged containers. Linux Continaiers also offer a broader selection of networking approaches, including allocation of physical interface to the container. However, it supports the same security features as runc, including Capabilities limitation, AppArmor and Seccomp filter.
+As illustrated by Flauzac et al., there are a few differences between LXC and other runtimes \cite{pcs:1}. LXC leverages User namespace by default to create unprivileged containers. Linux Continaiers also offer a broader selection of networking approaches, including allocation of physical interface to the container. However, it supports the same security features as runc, including Capabilities limitation, AppArmor and seccomp filter.
 
 \subsubsection*{containerd}
 
