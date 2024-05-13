@@ -49,7 +49,7 @@ To identify vulnerabilities, Clair uses the following security databases \cite{s
 
 However, in local installations, Clair only recieves information from Ubuntu, Debian, Red Hat Enterprise Linux (RHEL), Alpine and the Open Source Vulnerabilities (OSV) databases.
 
-Structurally, the Clair backend, which is composed of several daemons, such as Indexer, Matcher, and Notifier, runs in the background \cite{d:clairdeployment}. Upon startup, it downloads and maintains a local list of vulnerabilities that is stored in a Postgres database. To interact with the Clair backend, a special client tool called clairctl is used. clairctl pulls an image archive, pushes image layers to the Clair API, receives the results and presents them in a selected format. The results can be displayed on the screen or saved as a JSON file in a machine-readable format for later processing.
+Structurally, the Clair backend, which is composed of several daemons, such as Indexer, Matcher, and Notifier, runs in the background\footnote{\url{https://quay.github.io/clair/howto/deployment.html}}. Upon startup, it downloads and maintains a local list of vulnerabilities that is stored in a Postgres database. To interact with the Clair backend, a special client tool called clairctl is used. clairctl pulls an image archive, pushes image layers to the Clair API, receives the results and presents them in a selected format. The results can be displayed on the screen or saved as a JSON file in a machine-readable format for later processing.
 
 The latter feature simplifies the integration of Clair into the CI/CD pipeline for building and shipping containers. However, due to its design, Clair requires a significant amount of time to fully compile its vulnerability database, ranging from 20 to 30 minutes. To speed up this process, enthusiasts attempted to distribute preconfigured database images. A corresponding project can be found on GitHub (\url{https://github.com/arminc/clair-local-scan}). However, the feasibility of this approach is questionable due to the lack of support.
 
@@ -72,7 +72,7 @@ Overall, Clair is one of most established solutions for static container analysi
 
 \subsubsection{Trivy}
 
-Trivy is an open-source scanner developed by Aqua Security, a cloud security company founded in 2015. It is a replacement for Microscanner, another vulnerability detector developed previously by the same company. The main advantage of Trivy over other scanning tools is the simplicity of installation. To begin scanning, developers simply need to download an executable file from the vendor's website or the package manager. Trivy can scan not only container images, but also file systems, Git repositories, Virtual Machine images and Infrastructure as code files \cite{d:trivystart}. In addition to detecting vulnerabilities, Trivy also checks for misconfigurations, such as secrets or sensitive information stored in plain text.
+Trivy is an open-source scanner developed by Aqua Security, a cloud security company founded in 2015. It is a replacement for Microscanner, another vulnerability detector developed previously by the same company. The main advantage of Trivy over other scanning tools is the simplicity of installation. To begin scanning, developers simply need to download an executable file from the vendor's website or the package manager. Trivy can scan not only container images, but also file systems, Git repositories, Virtual Machine images and Infrastructure as code files\footnote{\url{https://aquasecurity.github.io/trivy/v0.51}}. In addition to detecting vulnerabilities, Trivy also checks for misconfigurations, such as secrets or sensitive information stored in plain text.
 
 To demonstrate the scanning process, the Trivy tool can be executed by using the command provided in Listing \ref{lst:trivy}.
 
@@ -132,7 +132,7 @@ For the purposes of our evaluation, we primarily focus on the \texttt{docker sco
 
 \subsubsection{Anchore Grype}
 
-Anchore Grype is a vulnerability scanning tool for container images and file systems, maintained by Anchore since 2020 \cite{s:anchore}. As a static analysis tool, Grype examines the contents of container images to identify known vulnerabilities in all major operating system and language-specific packages \cite{gh:grype}.
+Anchore Grype is a vulnerability scanning tool for container images and file systems, maintained by Anchore since 2020 \cite{s:anchore}. As a static analysis tool, Grype examines the contents of container images to identify known vulnerabilities in all major operating system and language-specific packages\footnote{\url{https://github.com/anchore/grype}}.
 
 To simplify the user experience, Grype is distributed as a single binary from the release pages of package managers. Listing \ref{lst:grype} demonstrates how Grype can be installed and used in a local environment. Additionally, Grype can also be used as part of a GitHub Actions pipeline.
 
@@ -162,7 +162,7 @@ Anchore Grype is a great tool for both local development and in CI/CD pipelines.
 
 \subsubsection{Snyk}
 
-Snyk is a comprehensive solution for securing open-source libraries, application code, container images and Kubernetes applications. It also provides infrastructure as code file protection, such as Terraform configurations. As a security company, Snyk was founded in 2015, during the rapid development of containerized technologies. Developers can access Snyk through a web UI or by using the snyk CLI tool \cite{gh:snyk}. A subscription is also available, which provides additional features such as private repository evaluation.
+Snyk is a comprehensive solution for securing open-source libraries, application code, container images and Kubernetes applications. It also provides infrastructure as code file protection, such as Terraform configurations. As a security company, Snyk was founded in 2015, during the rapid development of containerized technologies. Developers can access Snyk through a web UI or by using the snyk CLI tool\footnote{\url{https://github.com/snyk/cli}}. A subscription is also available, which provides additional features such as private repository evaluation.
 
 
 As other major scanning tools, Snyk can be integrated into the CI/CD pipelines of Jenkins and GitHub Actions, as well as popular IDEs such as VS Code and JetBrains. Additionally, Snyk supports Git repositories, cloud providers, and package managers, including npm and the Nexus repository. However, for the objectives of our evaluation, it is sufficient to run Snyk locally using the command line, as demonstrated in Listing \ref{lst:snyk}. Unlike other scanning tools, Snyk requires authentication with a developer account using an API token.

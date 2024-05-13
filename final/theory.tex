@@ -8,7 +8,7 @@ A container is an isolated process that uses a shared kernel \cite{1}. From the 
 
 The first attempts to create an environment similar to modern containers occured when \texttt{chroot} system call was invented. This technology provides root directory isolation, as the process is unable to see or access files outside of the assigned part of file system.
 
-More secure version of the same idea was implemented as \texttt{pivot\_root} system call and it is primarily used by container runtimes instead of chroot \cite{book:rice}.
+More secure version of the same idea was implemented as the \texttt{pivot\_root} system call and it is primarily used by container runtimes instead of \texttt{chroot} \cite{book:rice}.
 
 \subsubsection{Cgroups}
 
@@ -16,7 +16,7 @@ Cgroups was the next feature added to the Linux kernel to achieve container isol
 
 Cgroups are organised in a hierarchy of controllers and could be intracted with by pseudo file system usually present at \texttt{/sys/fs/cgroup}. Files and subdirectories inside could be used to adjust limits, and writing process ID to cgroup.procs assigns the process to the group \cite{book:rice}.
 
-In 2006, version 2 of cgroups was merged to the kernel to address the inconsistency between various controllers. In version 2, process may no longer be assigned different cgroups for different types of resources (controllers), and all threads are grouped together \cite{m:cgroups}.
+In 2006, version 2 of cgroups was merged to the kernel to address the inconsistency between various controllers. In version 2, process may no longer be assigned different cgroups for different types of resources (controllers), and all threads are grouped together\footnote{\url{https://man7.org/linux/man-pages/man7/cgroups.7.html}}.
 
 \subsubsection{Namespaces}
 
@@ -29,7 +29,7 @@ Linux namespaces were added to the Linux kernel in 2002 in order to virtualize p
   \begin{tabular}{| p{0.2\linewidth} | p{0.6\linewidth} | p{0.1\linewidth} |}
       \hline
       \centering \textbf{Namespace}     & \centering \textbf{Purpose}                                                                          & \centering\arraybackslash \textbf{Version} \\ \hline
-      Mount                             & Isolates filesystem mount points                                                                     & \centering\arraybackslash 2.4.19 (2002) \\ \hline
+      Mount                             & Isolates file system mount points                                                                     & \centering\arraybackslash 2.4.19 (2002) \\ \hline
       UTS (Unix Timesharing System)     & Isolates hostname and domain names independently of the hostname of the machine                      & \centering\arraybackslash 2.6.19 (2006) \\ \hline
       IPC (Inter-process Communication) & Isolate shared memory regions, message queues visible to processes                                   & \centering\arraybackslash 2.6.19 (2006) \\ \hline
       PID (Process ID)                  & Isolate visible processes, allows PIDs duplication in separate namespaces (including PID 1)          & \centering\arraybackslash 2.6.24 (2008) \\ \hline
@@ -47,7 +47,7 @@ By using namespaces, developers can create environments that are isolated from t
 
 \subsubsection{Capabilities}
 
-Finally, capabilities have introduced a more granular division of privileges compared to the traditional dichotomy between privileged (User ID 0) and unprivileged processes. Since their introduction in kernel 2.2, it has been possible to assign threads with specific groups of privileges, so that they can perform certain sensitive actions in specific parts of the system \cite{m:capabilities}. Modern kernel versions support approximately 40 capabilities, including the ability to control system time, interact with the kernel audit system, manipulate other processes, and manage file permissions or bind to ports with port numbers less than 1024.
+Finally, capabilities have introduced a more granular division of privileges compared to the traditional dichotomy between privileged (User ID 0) and unprivileged processes. Since their introduction in kernel 2.2, it has been possible to assign threads with specific groups of privileges, so that they can perform certain sensitive actions in specific parts of the system\footnote{\url{https://man7.org/linux/man-pages/man7/capabilities.7.html}}. Modern kernel versions support approximately 40 capabilities, including the ability to control system time, interact with the kernel audit system, manipulate other processes, and manage file permissions or bind to ports with port numbers less than 1024.
 
 Containers, as well as regular processes, can be assigned with various capabilities. Typically, the set of required capabilities for a containerized application to successfully run can be significantly reduced, as containers do not need to perform administrative tasks. For that reason, the Docker daemon spawns containers with limited privileges, and additional ones can be added by developers \cite{d:dockersecurity}. In addition, Docker provides the \texttt{--privileged} flag, which grants access to an extended range of privileged actions \cite{d:dockerrun}. This feature was developed to support Docker-in-Docker scenarios, however, it also imposes additional security risks.
 
@@ -85,7 +85,7 @@ However, this approach is inconvenient for daily usage. Instead, containers are 
 
 \subsubsection{OCI specification}
 
-The OCI runtime specification was established in 2015 by Docker, CoreOS and other leaders in the container industry, and it currently includes image, distribution and runtime specifications \cite{s:oci}.
+The OCI runtime specification was established in 2015 by Docker, CoreOS and other leaders in the container industry, and it currently includes image, distribution and runtime specifications\footnote{\url{https://opencontainers.org}}.
 
 According to OCI runtime specification, the user of a compliant runtime must be able to use standard operations, including querying the container state, creating a container from a special set of files (OCI bundle), starting, killing or deleting container \cite{d:ocirunspec}. Both compliant and non-compliant implementations exist in the wild, and runc is the reference implementation of the OCI runtime specification \cite{c:4}.
 
@@ -100,7 +100,7 @@ In addition to traditional containerization (isolation of a process using the ke
 
 runc was initially introduced in 2015 as a separated part of Docker and was presented as ``just the container runtime and nothing else'' \cite{b:dockerrunc}. In fact, runc is a low-level container executor with a very limited set of available features, as runc controls only container lifecycle management. runc is a reference implementation of OCI runtime specification which makes it default choice for many high-level runtime engines.
 
-To run a container with runc, a container bundle must be prepared. Container bundle is a directory which includes config.json file with specification and container root filesystem \cite{m:runc}. The specification file allows users to customize the process environment adjusting the command and arguments, user and group IDs, environment variables, Linux capabilities, mount points, namespaces and devices. runc has a \texttt{spec} command for generating this file. It is also possible to generate specifications for rootless containers, which creates a mapping between host and container User IDs \cite{j:2}.
+To run a container with runc, a container bundle must be prepared. Container bundle is a directory which includes config.json file with specification and container root file system\footnote{\url{https://man.archlinux.org/man/extra/runc/runc.8.en}}. The specification file allows users to customize the process environment adjusting the command and arguments, user and group IDs, environment variables, Linux capabilities, mount points, namespaces and devices. runc has a \texttt{spec} command for generating this file. It is also possible to generate specifications for rootless containers, which creates a mapping between host and container User IDs \cite{j:2}.
 
 The full list of commands supported by runc CLI tool is given below:
 \begin{itemize}
@@ -126,38 +126,38 @@ Although runc has more commands implemented than it is defined in the OCI runtim
 
 \subsubsection*{runc create}
 
-\texttt{runc create} command spawns a container instance from a OCI bundle. The bundle is a directory containing a specification file \texttt{config.json} and container root filesystem \cite{m:runc-create}. Next, we should break down the process of container creation, as implemented by runc. The source code of runc could be found in \url{https://github.com/opencontainers/runc}.
+\texttt{runc create} command spawns a container instance from a OCI bundle. The bundle is a directory containing a specification file \texttt{config.json} and container root file system\footnote{\url{https://man.archlinux.org/man/runc-create.8.en}}. Next, we should break down the process of container creation, as implemented by runc. The source code of runc could be found in \url{https://github.com/opencontainers/runc}.
 
 \paragraph*{Prepare container object}
-The code for the first step is mainly located in \texttt{runc/utils\_linux.go}. Firstly, runc prepares the environment for fresh instance parsing container specification from \texttt{config.json} file in the bundle (\texttt{spec, err := setupSpec(context)}). Then, container object is instantiated with \texttt{libcontainer} config and \texttt{libcontainer.Create} method. This method places the container root filesystem in a new directory with \texttt{0o711} permissions, applies cgroup manager (v1 or v2) and returns \texttt{Container} object in stopped state.
+The code for the first step is mainly located in \linebreak \texttt{runc/utils\_linux.go}. Firstly, runc prepares the environment for fresh instance parsing container specification from \texttt{config.json} file in the bundle \linebreak (\texttt{spec, err := setupSpec(context)}). Then, container object is instantiated with \linebreak \texttt{libcontainer} config and \texttt{libcontainer.Create} method. This method places the container root file system in a new directory with \texttt{0o711} permissions, applies cgroup manager (v1 or v2) and returns \texttt{Container} object in stopped state.
 
 Next, \texttt{startContainer} function starts the runner (\texttt{r.run}) with the process arguments defined in \texttt{config.json}. The runner is a struct which handles container object and other parameters like \texttt{detach} (true or false), \texttt{action} (\texttt{CT\_ACT\_CREATE} — create, \texttt{CT\_ACT\_RUN} — create and run) and \texttt{init} (\texttt{false} if process must be executed in the existing container).
 
-\texttt{r.run} method creates a new libcontainer.Process object and initializes IO such as TTY (stdin, stdout, stderr). Finally, depending on the action parameter, the corresponding container method is called (Start, Restore or Run). run create calls the first of these methods.
+\texttt{r.run} method creates a new libcontainer.Process object and initializes IO such as TTY (stdin, stdout, stderr). Finally, depending on the action parameter, the corresponding container method is called (\texttt{Start}, \texttt{Restore} or \texttt{Run}). run create calls the first of these methods.
 
 \paragraph*{Prepare binary and the parent process}
 
-Code for the next step is located in the \texttt{runc/libcontainer/container\_linux.go} file. \texttt{Start} function triggers process execution inside the container. Firstly, \texttt{c.createExecFifo} creates a FIFO in the root directory, the default path is \texttt{/run/runc/<container id>/exec.fifo} with \texttt{622} permissions. FIFO is a unidirectional interprocess communication channel that can be accessed as part of the filesystem \cite{m:fifo}. Afterwards, the \texttt{process} object is passed to the internal container function \texttt{start}. This function basically creates a new parent process which helps to spawn a target child process defined in \texttt{config.json}. \texttt{newParentProcess} clones \texttt{/proc/self/exe} (runc binary) in order to protect the original binary from being overwritten. Then the path to runc binary and the first argument (\texttt{init}) are concatenated, so that the constructed command is \texttt{runc init}. After that, \texttt{newParentProcess} calls \texttt{newInitProcess} to create an \texttt{initProcess} object and pass the namespaces further from \texttt{config.json}.
+Code for the next step is located in the \texttt{runc/libcontainer/container\_linux.go} file. \texttt{Start} function triggers process execution inside the container. Firstly, \texttt{c.createExecFifo} creates a FIFO in the root directory, the default path is \texttt{/run/runc/<container id>/exec.fifo} with \texttt{622} permissions. FIFO is a unidirectional interprocess communication channel that can be accessed as part of the file system\footnote{\url{https://man7.org/linux/man-pages/man7/fifo.7.html}}. Afterwards, the \texttt{process} object is passed to the internal container function \texttt{start}. This function basically creates a new parent process which helps to spawn a target child process defined in \texttt{config.json}. \texttt{newParentProcess} clones \texttt{/proc/self/exe} (runc binary) in order to protect the original binary from being overwritten. Then the path to runc binary and the first argument (\texttt{init}) are concatenated, so that the constructed command is \texttt{runc init}. After that, \texttt{newParentProcess} calls \texttt{newInitProcess} to create an \texttt{initProcess} object and pass the namespaces further from \texttt{config.json}.
 
 After \texttt{newParentProcess} returns the parent process object, \texttt{parent.start()} method is called to trigger the parent execution (\texttt{p.cmd.Start()}).
 
 \paragraph*{Start parent and child processes}
 
-\texttt{p.cmd.Start()} executes a new process (\texttt{runc init}). This command argument is handled in the \texttt{runc/init.go} file. Firstly, \linebreak \texttt{runc/libcontainer/nsenter} package is imported to handle low-level namespace operations \cite{sof:1}. This import implicitly calls \texttt{nsexec()}. This lengthy C function initially accesses the \texttt{init} pipe to read bootstrap data (namespace paths, clone flags, uid and gid mappings, and the console path) from the parent process. Then it creates a child process \texttt{stage 1: STAGE\_CHILD}. This first child process has to unshare all of the requested namespaces, possibly request parent for user mapping and finally spawn another child process \texttt{stage 2: STAGE\_INIT} (as mentioned above, pid namespace of calling process must not be changed, so new process is forked to actually enter the new PID namespace) \cite{gh:nsexec}. Latter child process is actually assigned all the required namespaces and it is the only process to return to the Go runtime after final cleanup steps \cite{b:terenceli}.
+\texttt{p.cmd.Start()} executes a new process (\texttt{runc init}). This command argument is handled in the \texttt{runc/init.go} file. Firstly, \linebreak \texttt{runc/libcontainer/nsenter} package is imported to handle low-level namespace operations \cite{sof:1}. This import implicitly calls \texttt{nsexec()}. This lengthy C function initially accesses the \texttt{init} pipe to read bootstrap data (namespace paths, clone flags, uid and gid mappings, and the console path) from the parent process. Then it creates a child process \texttt{stage 1: STAGE\_CHILD}. This first child process has to unshare all of the requested namespaces, possibly request parent for user mapping and finally spawn another child process \texttt{stage 2: STAGE\_INIT} (as mentioned above, pid namespace of calling process must not be changed, so new process is forked to actually enter the new PID namespace)\footnote{\url{https://github.com/opencontainers/runc/blob/main/libcontainer/nsenter/nsexec.c}}. Latter child process is actually assigned all the required namespaces and it is the only process to return to the Go runtime after final cleanup steps \cite{b:terenceli}.
 
-After stage \texttt{2: STAGE\_INIT} child process is ready, \texttt{init.go} calls \texttt{libcontainer.Init()}, which consequently triggers \texttt{startInitialization()}. This function acquires init and log pipes and determines whether \texttt{runc exec} (\texttt{linuxSetnsInit}) or \texttt{runc create/run} (\texttt{linuxStandardInit}) was issued.
+After stage \texttt{2: STAGE\_INIT} child process is ready, \texttt{init.go} calls \linebreak \texttt{libcontainer.Init()}, which consequently triggers \texttt{startInitialization()}. This function acquires init and log pipes and determines whether \texttt{runc exec} (\texttt{linuxSetnsInit}) or \linebreak \texttt{runc create/run} (\texttt{linuxStandardInit}) was issued.
 
 Next, \texttt{containerInit} and \texttt{linuxStandardInit.Init()} methods are executed. The last function actually does the initialization work such as networking and routing setup, SELinux labeling, console, hostname, AppArmor, sysctl properties, seccomp. After that, \texttt{system.Exec} replaces the running binary image with the one from \texttt{config.json}.
 
-Overall, runc is a lightweight, OCI compliant, high performance, and low-level container runtime which supports various security features including seccomp, SElinux and AppArmor \cite{c:5}. runc relies on the Linux kernel features such as cgroups and namespaces to provide necessary degree of isolation. Although battle-tested, runc was discovered to be prone to vulnerabilities multiple times throughout its existance, for example, CVE-2019-5736, CVE-2016-9962 \cite{s:unit42} \cite{s:rh1}.
+Overall, runc is a lightweight, OCI compliant, high performance, and low-level container runtime which supports various security features including seccomp, SElinux and AppArmor \cite{c:5}. runc relies on the Linux kernel features such as cgroups and namespaces to provide necessary degree of isolation. Although battle-tested, runc was discovered to be prone to vulnerabilities multiple times throughout its existance, for example, CVE-2019-5736, CVE-2016-9962\footnote{\url{https://access.redhat.com/security/vulnerabilities/cve-2016-9962}} \cite{s:unit42}.
 
 \subsubsection*{crun}
 
-crun is another low-level container runtime that fully implements the OCI runtime specification. Unlike runc, crun was written in C \cite{d:implementations}. According to developers, C suits better for lower level tools like container runtimes \cite{gh:crun}. Although runc was written in Go, internally it still depends on a special C library, as was discussed previously, to perform low-level manipulations with system objects. On the contrary, JSON processing in crun is less elegant compared to the Go realisation.
+crun is another low-level container runtime that fully implements the OCI runtime specification. Unlike runc, crun was written in C \cite{d:implementations}. According to developers, C suits better for lower level tools like container runtimes\footnote{\url{https://github.com/containers/crun}}. Although runc was written in Go, internally it still depends on a special C library, as was discussed previously, to perform low-level manipulations with system objects. On the contrary, JSON processing in crun is less elegant compared to the Go realisation.
 
 crun is praised to be faster than other runtimes by the developers and researchers, namely Velp et al. \cite{c:6}. It was demonstrated that crun is about 2 times faster than runc according to the performance test. crun is currently used as the default runtime in Fedora, because crun provides full support of cgroups v2, default version in Fedora distribution \cite{c:7}.
 
-crun command supports the following arguments \cite{m:crun}:
+crun command supports the following arguments\footnote{\url{https://man.archlinux.org/man/crun.1.en}}:
 \begin{itemize}
   \item \texttt{checkpoint} — checkpoint a running container;
   \item \texttt{create} — create a container;
@@ -178,15 +178,15 @@ crun command supports the following arguments \cite{m:crun}:
 
 It can be noted that the list of offered commands is equivalent to the one of runc, but crun omits \texttt{events} command, which can provide runtime information about container.
 
-Overall, crun runtime provides the same functionality as runc. One of advantages of crun is its improved performance thanks to the choice of the programming language. Some vulnerabilities were discovered in crun, for example CVE-2021-30465 \cite{s:CVE-2021-30465}.
+Overall, crun runtime provides the same functionality as runc. One of advantages of crun is its improved performance thanks to the choice of the programming language. Some vulnerabilities were discovered in crun, for example CVE-2021-30465\footnote{\url{https://www.cve.org/CVERecord?id=CVE-2021-30465}}.
 
 \subsubsection*{LXC}
 
 Linux Containers (LXC) is another virtualization technology for running multiple isolated Linux containers sharing a single Linux kernel. It was introduced in 2008 after the appearance of isolation features in the Linux kernel. LXC precedes Docker, which also relies on the same kernel features and was initially built on top of LXC \cite{acm:1}.
 
-Unlike OCI-compliant container runtimes, LXC is suitable for running fully packed yet isolated Linux systems \cite{b:lxc}. Although all of the LXC tenants share the same kernel and are only isolated by kernel features (cgroups, namespaces, root filesystem isolation, AppArmor and Seccomp), LXC containers resemble a traditional virtual machine. This advantage is beneficial in specific cases, for instance, running an Android emulator inside a container \cite{c:8}.
+Unlike OCI-compliant container runtimes, LXC is suitable for running fully packed yet isolated Linux systems \cite{b:lxc}. Although all of the LXC tenants share the same kernel and are only isolated by kernel features (cgroups, namespaces, root file system isolation, AppArmor and Seccomp), LXC containers resemble a traditional virtual machine. This advantage is beneficial in specific cases, for instance, running an Android emulator inside a container \cite{c:8}.
 
-To spawn LXC containers, it is possible to use \texttt{lxc-create} command with the name of the selected Linux template. Other LXC utilities include \texttt{lxc-start} which executes the init process in the container and \texttt{lxc-attach} which provides a container shell \cite{m:lxc}.
+To spawn LXC containers, it is possible to use \texttt{lxc-create} command with the name of the selected Linux template. Other LXC utilities include \texttt{lxc-start} which executes the init process in the container and \texttt{lxc-attach} which provides a container shell\footnote{\url{https://man7.org/linux/man-pages/man7/lxc.7.html}}.
 
 As illustrated by Flauzac et al., there are a few differences between LXC and other runtimes \cite{pcs:1}. LXC leverages User namespace by default to create unprivileged containers. Linux Continaiers also offer a broader selection of networking approaches, including allocation of physical interface to the container. However, it supports the same security features as runc, including Capabilities limitation, AppArmor and seccomp filter.
 
@@ -194,28 +194,28 @@ As illustrated by Flauzac et al., there are a few differences between LXC and ot
 
 containerd is a high-level container runtime which manages both image and container lifecycle \cite{b:ianlewis3}. containerd became a separate runtime and replaced Docker Engine's built-in container execution module in Docker 1.11. Since then, containerd remains the default high-level runtime in Docker stack and it is also one of standard runtimes for Kubernetes \cite{book:kube}.
 
-containerd interacts with other software including Docker or with users via gRPC API and several command line tools such as ctr, nerdctl and crictl \cite{d:getting-started}. These tools support traditional operations like pulling or searching images, creating or deleting containers. However, the feature to build container is not included in containerd. To manipulate the containers, containerd relies on runc or other compatible low-level runtimes. For example, to run a container, containerd converts the image to OCI bundle and executes runc binary with necessary parameters \cite{c:4}.
+containerd interacts with other software including Docker or with users via gRPC API and several command line tools such as \texttt{ctr}, \texttt{nerdctl} and \texttt{crictl} \cite{d:getting-started}. These tools support traditional operations like pulling or searching images, creating or deleting containers. However, the feature to build container is not included in containerd. To manipulate the containers, containerd relies on runc or other compatible low-level runtimes. For example, to run a container, containerd converts the image to OCI bundle and executes runc binary with necessary parameters \cite{c:4}.
 
 \subsubsection*{Docker}
 
 Docker is one of the most popular and widely used container runtimes. In fact, Docker provides a convenient platform for building, shipping, and running applications in containers. It was developed in 2013 as a container managing platform with LXC as its backend, which was replaced with \texttt{libcontainer} in 2014. In 2015, starting with Docker 1.11, Docker Engine was split into several parts:
 
 \begin{itemize}
-  \item dockerd — the daemon handling REST API, auth, networking and storage;
-  \item containerd — high-level runtime component managing container and image lifecycle;
-  \item containerd-shim — a helper per-container component for handling the container process decoupled from the containerd;
-  \item runc — low-level runtime that manages OCI containers \cite{acm:1}.
+  \item \texttt{dockerd} — the daemon handling REST API, auth, networking and storage;
+  \item \texttt{containerd} — high-level runtime component managing container and image lifecycle;
+  \item \texttt{containerd-shim} — a helper per-container component for handling the container process decoupled from the containerd;
+  \item \texttt{runc} — low-level runtime that manages OCI containers \cite{acm:1}.
 \end{itemize}
 
 This division was performed in order to reduce the amount of platform-dependent code in Docker.
 
-Alongside with the daemon, Docker usually ships with a docker client application that communicates with the daemon, typically through the socket \texttt{/var/run/docker.sock} \cite{book:docker} Therefore, the ability to write to the socket is equivalent to having a full control over Docker daemon, which is a shortcut to attack at the host. For this reason, the access to the socket must be restricted.
+Alongside with the daemon, Docker usually ships with a \texttt{docker} client application that communicates with the daemon, typically through the socket \texttt{/var/run/docker.sock} \cite{book:docker} Therefore, the ability to write to the socket is equivalent to having a full control over the Docker daemon, which is a shortcut to attack at the host. For this reason, the access to the socket must be restricted.
 
-As a high-level platform, docker is compatible with various high-level runtimes that act on the contianerd-shim level (such as Wasmtime, gVisor and Kata Containers) and low-level runtimes that are runc replacements (crun, youki) \cite{d:alternative-runtimes}.
+As a high-level platform, Docker is compatible with various high-level runtimes that act on the contianerd-shim level (such as Wasmtime, gVisor and Kata Containers) and low-level runtimes that are runc replacements (crun, youki)\footnote{\url{https://docs.docker.com/engine/alternative-runtimes}}.
 
 \subsubsection*{Podman}
 
-Podman is a daemonless container engine for developing, managing, and running OCI Containers on Linux. Podman avoids the client-server architecture implemented by Docker and relies on the classic fork-exec model. The absence of root daemon means that Podman has better support for rootless containers, which allows the execution of containers with user namespace functionality \cite{acm:2}. As a high-level runtime, Podman delegates container execution to runc or other OCI-compatible runtimes. For image building, Podman stack includes a separate tool called Buildah. This tool has ability to create OCI-compatible images defined by Dockerfile without root privileges or daemon \cite{gh:buildah}.
+Podman is a daemonless container engine for developing, managing, and running OCI Containers on Linux. Podman avoids the client-server architecture implemented by Docker and relies on the classic fork-exec model. The absence of root daemon means that Podman has better support for rootless containers, which allows the execution of containers with user namespace functionality \cite{acm:2}. As a high-level runtime, Podman delegates container execution to runc or other OCI-compatible runtimes. For image building, Podman stack includes a separate tool called Buildah\footnote{\url{https://github.com/containers/buildah}}. This tool builds OCI-compatible images defined by Dockerfile without root privileges or daemon.
 
 \subsubsection*{CRI-O}
 
@@ -223,21 +223,21 @@ CRI-O is a Go implementation of the Kubernetes CRI (Container Runtime Interface)
 
 \subsubsection*{rkt}
 
-rkt (Rocket) is a single-binary Docker alternative, initially released in December 2014 by CoreOS \cite{c:9}. Designed with security in mind, rkt has several strong features available such as pulling images as a non-root user and image signature verification \cite{c:10}. In addition, rkt can provision a special lightweight virtual machine for each pod and place the container inside. This approach provides stronger isolation than traditional kernel virtualisation used by other runtimes.
+rkt (Rocket) is a single-binary Docker alternative, initially released in December 2014 by CoreOS \cite{c:9}. Designed with security in mind, rkt has several strong features available such as pulling images as a non-root user and image signature verification \cite{c:10}. In addition, rkt can provision a special lightweight virtual machine for each pod and place the container inside. This approach provides stronger isolation than traditional kernel virtualization used by other runtimes.
 
-While rkt has several advantages compared to other runtimes, it has been discontinued since 2020 and and recieves no more development or maintenance \cite{gh:rkt}.
+While rkt has several advantages compared to other runtimes, it has been discontinued since 2020 and recieves no more development or maintenance\footnote{\url{https://github.com/rkt/rkt}}.
 
 
 \clearpage
 \subsubsection{Alternative runtimes}
 
-We have already observed various runtimes that provide containerization based on kernel security and isolation features such as cgroups, namespaces and root filesystem isolation. The common flaw of these runtimes is the shared kernel, which poses additional security risks. The following runtimes overcome this disadvantage by moving from host kernel to guest kernel in one way or another.
+We have already observed various runtimes that provide containerization based on kernel security and isolation features such as cgroups, namespaces and root file system isolation. The common flaw of these runtimes is the shared kernel, which poses additional security risks. The following runtimes overcome this disadvantage by moving from host kernel to guest kernel in one way or another.
 
 \subsubsection*{gVisor}
 
 gVisor is an open-source container runtime designed to add an extra layer of isolation between containerized process and the host system. gVisor consists of several components. One of them, Sentry, is the user space kernel. Sentry listens for incoming system calls from the application, intercepts and implements them by itself, relying on just a limited subset of system calls. Those calls are actually passed to the host. This way, the user application does not interact with the host directly \cite{acm:3}.
 
-The other components of gVisor are Gofer, which allows Sentry to access the file system resources, and Netstack, which handles the networking. Additionally, gVisor includes an OCI-compatible runtime called runsc. This runtime can be used by Docker and Kubernetes, making it simple to embed sandboxed gVisor containers into existing flows \cite{gh:gvisor}.
+The other components of gVisor are Gofer, which allows Sentry to access the file system resources, and Netstack, which handles the networking. Additionally, gVisor includes an OCI-compatible runtime called \texttt{runsc}. This runtime can be used by Docker and Kubernetes, making it simple to embed sandboxed gVisor containers into existing flows \footnote{\url{https://github.com/google/gvisor}}.
 
 Although gVisor does not virtualize system hardware, it still creates an additional layer of protection. However, this approach decreases the performance of applications that frequently issue system calls. Another limitation is that applications which require any system calls not supported by Sentry cannot be ported to gVisor \cite{c:4}.
 
@@ -249,13 +249,13 @@ Kata Containers run each application within its own lightweight, isolated virtua
 
 \subsubsection*{Firecracker}
 
-Amazon Firecracker is an extremely lightweight hypervisor for sandboxed applications \cite{spr:1}. On top of this technology cloud services such as AWS Lambda and AWS Fargate were developed. Firecracker uses KVM hypervisor to launch microVMs instances on a Linux host. These microVMs run a special Linux guest operating system with lightweight input/output services and a minimalistic set of software which results in the reduced overhead \cite{acm:3}.
+Amazon Firecracker is an extremely lightweight hypervisor for sandboxed applications \cite{spr:1}. On top of this technology, cloud services such as AWS Lambda and AWS Fargate were developed. Firecracker uses KVM hypervisor to launch microVMs instances on a Linux host. These microVMs run a special Linux guest operating system with lightweight input/output services and a minimalistic set of software which results in the reduced overhead \cite{acm:3}.
 
 \subsubsection*{Nabla}
 
-The Nabla container, developed by IBM, leverages Unikernel technology to minimize the number of system calls accessible. Unikernels are specifically compiled images that combine an application with only the necessary components of an operating system library. This enables the application to run directly on virtual hardware. Currently, Unikernels support a range of programming languages and are compatible with multiple common platforms \cite{acm:4}.
+The Nabla container, developed by IBM, leverages Unikernel technology to minimize the number of system calls accessible. Unikernels are specifically compiled images that combine an application with only the necessary components of an operating system library. This way, the Nabla containers can be run by hypervisors like a regular VM. Currently, Unikernels support a range of programming languages and are compatible with multiple common platforms \cite{acm:4}.
 
-To manipulate Nabla containers, a special OCI-compliant command line tool known as \texttt{runnc} could be used \cite{gh:runnc}.
+To manipulate Nabla containers, a special OCI-compliant command line tool known as \texttt{runnc} could be used\footnote{\url{https://github.com/nabla-containers/runnc}}.
 
 While Unikernels approach provides the desirable degree of isolation comparable to virtual machines, some researchers highlight several issues, such as incompatibility with current VM managing tools, difficulty to debug applications and excessive overhead of nested virtualization when running Nabla containers with hypervisors. A possible mitigation of these challenges was proposed by Williams et al \cite{acm:4}. They suggest a way of running unikernels as processes by leveraging existing kernel system call whitelisting mechanisms (seccomp).
 
@@ -265,7 +265,7 @@ While Unikernels approach provides the desirable degree of isolation comparable 
 
 As discussed previously, container virtualization is not a recently developed technology. The origins of containerization could be traced back to the previous century. Despite being battle-tested, containers are often targeted by various cyber attacks, as shown by several studies. Jian and Chen describe two possible attacks that exploit Linux namespace vulnerabilities and memory handling to perform what is known as container escape attack \cite{acm:5}. Another vulnerability mentioned by Bélair et al. allows privilege escalation to the host after rewriting runc binary from a maliciously crafted container \cite{acm:6}.
 
-In the context of container virtualization, possible attack vectors might be classified into different categories depending on the targeted components. Liz Rice classifies attack vectors based on the life cycle of containers \cite{book:rice}. Through this lens, the attack surface includes vulnerabilities in the application code, insecure configurations during the build and run stages, the security of the hosts where the build and execution stages take place, supply chain integrity, secret handling, container networking, and runtime escaping from their boundaries. Sultan et al. establish a threat model focused on host and container levels of the container life cycle \cite{ieee:1}. This taxonomy is based on four directions: protecting container from malicious applications, container from other malicious containers, host and its software from compromised containers and, finally, containers from the host.
+In the context of container virtualization, possible attack vectors might be classified into different categories depending on the targeted components. Liz Rice classifies attack vectors based on the lifecycle of containers \cite{book:rice}. Through this lens, the attack surface includes vulnerabilities in the application code, insecure configurations during the build and run stages, the security of the hosts where the build and execution stages take place, supply chain integrity, secret handling, container networking, and runtime escaping from their boundaries. Sultan et al. establish a threat model focused on host and container levels of the container lifecycle \cite{ieee:1}. This taxonomy is based on four directions: protecting container from malicious applications, container from other malicious containers, host and its software from compromised containers and, finally, containers from the host.
 
 As researchers propose multiple taxonomies to understand the security landscape in the context of container virtualization, we will later consider the main sources of threats in more detail.
 
@@ -288,7 +288,7 @@ Firstly, it is possible to set a specific user inside the container with \linebr
 
 \subsubsection*{Rootless containers}
 
-However, in some cases, it is not possible to use a user other than the root user. For example, software designed to run directly on the host cannot be switched to another user ID. For such cases, a container can be deployed in rootless mode. When rootless mode is enabled, the user inside the container is assigned the UID 0 (i. e. considered to be the root) and, at the same time, it is a regular user on the host. This approach was developed on top of user namespaces — a special kind of Linux namespaces providing isolation for UIDs and GID, process root directory and capabilities. According to the documentation, creating a user namespace on recent Linux distributions is an unprivileged operation, and it effectively enables regular users to manage their containers without obtaining excessive privileges \cite{m:usernamespaces}. Currently, several runtimes could be installed and used by a regular root user, including Docker, runc, LXC, Podman and other runtimes \cite{d:dockerrootless,gh:runc,s:lxc}. However, the configuration for spawning rootless containers is less straightforward and has some limitations such as limited file systems support, Linux security features and networking \cite{d:dockerrootless}. Also, user IDs remapping implies that file permissions on the host must be configured more carefully, as the user inside the container is different from the one on the host \cite{book:rice}.
+However, in some cases, it is not possible to use a user other than the root user. For example, software designed to run directly on the host cannot be switched to another user ID. For such cases, a container can be deployed in rootless mode. When rootless mode is enabled, the user inside the container is assigned the UID 0 (i. e. considered to be the root) and, at the same time, it is a regular user on the host. This approach was developed on top of user namespaces — a special kind of Linux namespaces providing isolation for UIDs and GID, process root directory and capabilities. According to the documentation, creating a user namespace on recent Linux distributions is an unprivileged operation, and it effectively enables regular users to manage their containers without obtaining excessive privileges\footnote{\url{https://man7.org/linux/man-pages/man7/user_namespaces.7.html}}. Currently, several runtimes could be installed and used by a regular root user, including Docker, runc\footnote{\url{https://github.com/opencontainers/runc}}, LXC, Podman and other runtimes \cite{d:dockerrootless,s:lxc}. However, the configuration for spawning rootless containers is less straightforward and has some limitations such as limited file systems support, Linux security features and networking \cite{d:dockerrootless}. Also, user IDs remapping implies that file permissions on the host must be configured more carefully, as the user inside the container is different from the one on the host \cite{book:rice}.
 
 It is worth mentioning that rootless mode in container deployment can successfully prevent the exploitation of certain vulnerabilities. To illustrate, vulnerability \linebreak CVE-2019-5736 (``Runcescape'') discovered in the reference runtime implementation, runc, offered an intruder the possibility to override \texttt{runc} binary and execute arbitrary commands on the host. However, this vulnerability is mitigated by correct enforcement of user namespaces \cite{s:CVE-2019-5736}. Other vulnerabilities that could be successfully addressed with rootless mode are mentioned in \cite{c:12} and \cite{d:enhancements}.
 
@@ -308,7 +308,7 @@ Mounting Docker daemon sockets is another potentially harmful practice. Sending 
 
 Container virtualization is essentially operating system virtualization when we refer to traditional runtimes like runc or LXC. This implies that the isolation between container processes is accomplished by kernel security measures, primarily namespaces and cgroups. It also implies that each container on the host has access to the same kernel as normal applications. 
 
-These circumstances explain why vulnerabilities in the mechanisms involved in process isolation can lead to the container escape and affect the host and other containers. While the Linux kernel has been widely used up until now, it is complex software that is still under development. Several isolation features have been gradually added to the kernel, including the user namespace, which was introduced in version 3.8 of the kernel in 2013. The time namespace (which is not currently regulated by the OCI specification), was developed in version 5.6 of the kernel in 2020. Between these two events, there was also the release of version 4.5 of the kernel with support for cgroups v2 \cite{s:linux38,s:linux45,s:linux56}. This rate of change exposes certain parts of the kernel to attackers from time to time.
+These circumstances explain why vulnerabilities in the mechanisms involved in process isolation can lead to the container escape and affect the host and other containers. While the Linux kernel has been widely used up until now, it is complex software that is still under development. Several isolation features have been gradually added to the kernel, including the user namespace, which was introduced in version 3.8 of the kernel in 2013. The time namespace (which is not currently regulated by the OCI specification), was developed in version 5.6 of the kernel in 2020. Between these two events, there was also the release of version 4.5 of the kernel with support for cgroups v2\footnote{\url{https://kernelnewbies.org/Linux_3.8}} \footnote{\url{https://kernelnewbies.org/Linux_4.5}} \footnote{\url{https://kernelnewbies.org/Linux_5.6}}. This rate of change exposes certain parts of the kernel to attackers from time to time.
 
 To illustrate, the history of cyber attacks has seen several vulnerabilities that could be exploited to breach container isolation. One such vulnerability is CVE-2022-0492, which was discovered in cgroups v1. Essentially, under certain circumstances, containers can execute arbitrary code with full privileges on the host due to a misconfiguration of the release agent after the termination of a process in the control group \cite{s:CVE-2022-0492}.
 
@@ -334,7 +334,7 @@ It is more efficient to scan container images rather than individual containers,
 
 The CIS Docker Benchmark suggests scanning images frequently and rebuilding them if necessary to apply security patches, upgrade package versions, and ensure compliance with best practices. This ensures that the containers are always running on the latest, most secure version of the software \cite{cis:docker}.
 
-When developing containerized applications, special attention should be paid to third-party packages and dependencies. Vulnerabilities in widely used software can be particularly harmful, as they expose entire systems to exploitation. A well-known example of this is the Log4Shell vulnerability, which affected countless systems running Java applications to remote code execution attacks \cite{nvd:CVE-2021-44228}.
+When developing containerized applications, special attention should be paid to third-party packages and dependencies. Vulnerabilities in widely used software can be particularly harmful, as they expose entire systems to exploitation. A well-known example of this is the Log4Shell vulnerability, which affected countless systems running Java applications to remote code execution attacks\footnote{\url{https://nvd.nist.gov/vuln/detail/CVE-2021-44228}}.
 
 As can be seen, the process of scanning and updating is similar to a race against an intruder. In order to reduce the chances of a successful attack in the event of a possible breach, it is important to implement in-depth protection for the container environment and the host from compromised applications. Later, we will discuss various techniques for strengthening security in order to achieve additional protection.
 
@@ -363,7 +363,7 @@ Most aspects of containerization are managed by the Linux kernel, which makes us
 
 \subsubsection*{Seccomp}
 
-Seccomp (Secure Computing) is a Linux kernel feature that limits the set of system calls a process can execute. This security measure allows running a process in a restricted mode, where only a limited number of system calls are allowed: \texttt{read}, \texttt{write}, \texttt{exit} and \texttt{sigreturn} \cite{m:seccomp}. This way, the process can only read from and write to existing files, return from signal handling and exit (however, it is impossible to issue \texttt{open} system call to access new files). This restricted access to system resources prevents malicious software from causing harm to the system or the host.
+Seccomp (Secure Computing) is a Linux kernel feature that limits the set of system calls a process can execute. This security measure allows running a process in a restricted mode, where only a limited number of system calls are allowed: \texttt{read}, \texttt{write}, \texttt{exit} and \texttt{sigreturn}\footnote{\url{https://man7.org/linux/man-pages/man2/seccomp.2.html}}. This way, the process can only read from and write to existing files, return from signal handling and exit (however, it is impossible to issue \texttt{open} system call to access new files). This restricted access to system resources prevents malicious software from causing harm to the system or the host.
 
 As this set of system calls is not sufficient for most applications to operate normally, another mode of seccomp was developed. In filtering mode, a Berkeley Packet Filter (BPF) program is used to determine whether a process should be terminated, logged or simply allowed to proceed with the system call \cite{d:kernelseccomp}.
 
@@ -383,7 +383,7 @@ The Linux Security Module is a framework that allows developers to implement new
 
 \subsubsection*{AppArmor}
 
-AppArmor (Application Armor) is a security feature that implements path-based access control and is part of the Linux kernel since 2010. It is included in various Linux distributions, such as Debian and Ubuntu \cite{s:wikiapparmor}.
+AppArmor (Application Armor) is a security feature that implements path-based access control and is part of the Linux kernel since 2010. It is included in various Linux distributions, such as Debian and Ubuntu\footnote{\url{https://wiki.apparmor.net}}.
 
 AppArmor assigns individual executables a policy that limits the set of files, capabilities, and network and memory that an application can access. AppArmor can be used in two modes: learning mode, which traces all the rules in a given profile that an application violates, and enforcing mode, where it prohibits the actions forbidden by the profile. The logs from learning mode can help to adjust the profile so that it matches the typical execution activity. When there are no more violations, AppArmor can be switched to enforcing mode.
 
@@ -393,7 +393,7 @@ In addition to the default profile, there are predefined profiles for popular so
 
 \subsubsection*{SELinux}
 
-SELinux is another security extension that was merged into the Linux kernel in 2003. This complex technology operates with several key concepts. Firstly, files, processes and applications are labelled with special context information that is stored either as a filesystem attribute or within the kernel. The labels are composed of SELinux users, roles, types and levels. In a basic scenario, only the type is used to determine access rules. Next, there is a policy that allows or denies a process access to other objects based on their shared labels. This allows an application to work with its own files without the permission to modify other parts of the system \cite{c:13}.
+SELinux is another security extension that was merged into the Linux kernel in 2003. This complex technology operates with several key concepts. Firstly, files, processes and applications are labelled with special context information that is stored either as a file system attribute or within the kernel. The labels are composed of SELinux users, roles, types and levels. In a basic scenario, only the type is used to determine access rules. Next, there is a policy that allows or denies a process access to other objects based on their shared labels. This allows an application to work with its own files without the permission to modify other parts of the system \cite{c:13}.
 
 The security model described above is known as type enforcement. Another possible policy is multi-level security, although it is not as widely used. SELinux operates in three modes: enforcing, permissive and disabled. Enforcing mode restricts access to only what is permitted by the security policy. Permissive allows applications to bypass rules, but logs any errors, which can be used to adjust the security policy based on the environment. When SELinux is disabled, it is completely turned off.
 
@@ -435,9 +435,9 @@ In order to ensure safety inside the virtual environment, various automation too
 
 To evaluate the security of the entire system, special benchmark tools were developed. These tools are based on the CIS Docker Benchmark, which provides secure configuration guidelines for host configuration, the Docker daemon, configuration files, and images. They also provide guidelines for building and running containers, as well as optional guidelines for Docker Swarm \cite{cis:docker}.
 
-docker-bench-security is an open-source project on GitHub that that contains a script for evaluating the security of current configuration. This bash script checks the system against all recommended configurations in the relevant CIS publication and generates a security report for the user. The project is updated regularly and currently supports version 1.6.0 of the CIS Benchmark \cite{gh:docker-bench-security}.
+docker-bench-security is an open-source project on GitHub that that contains a script for evaluating the security of current configuration. This bash script checks the system against all recommended configurations in the relevant CIS publication and generates a security report for the user. The project is updated regularly and currently supports version 1.6.0 of the CIS Benchmark\footnote{\url{https://github.com/docker/docker-bench-security}}.
 
-A similar project, docker-bench, is developed by Aqua Security company, which specialises in cloud-native security. This tool was written in Go and currently supports the CIS Docker Benchmark version 1.3.1 \cite{gh:docker-bench}.
+A similar project, docker-bench, is developed by Aqua Security company, which specialises in cloud-native security. This tool was written in Go and currently supports the CIS Docker Benchmark version 1.3.1\footnote{\url{https://github.com/aquasecurity/docker-bench}}.
 
 Overall, any of these tools are useful in ensuring that best practices are implemented and that no obvious security issues can be exploited by malicious actors.
 
@@ -445,7 +445,7 @@ The idea of self-assessment of the security of the deployment environment was fu
 
 \subsubsection*{Vulnerability scanners}
 
-We have already mentioned Snyk, which is a vulnerability scanner. Scanning tools are an effective mechanism for assessing whether a running application has any known vulnerabilities that could be exploited by an intruder.
+We have already mentioned Snyk, which is an example of vulnerability scanners. Scanning tools are an effective mechanism for assessing whether a running application has any known vulnerabilities that could be exploited by an intruder.
 
 To successfully implement vulnerability scanning, several conditions must be met. Firstly, when scanning images and not running containers, it implies the immutability of the containers. This means that no software changes are made during runtime. All libraries, dependencies and code are installed during the build process. Secondly, images need to be scanned regularly, as the database of known vulnerabilities is continuously updated. This ensures that any new vulnerabilities are detected as soon as they are discovered.
 
